@@ -192,16 +192,16 @@ def render_suitability_comparison(symbol: str, result: Mapping[str, Any], profil
     st.caption("Cùng bộ ngưỡng cho mọi nguồn; tỷ lệ chỉ hiển thị khi ≥80% tiêu chí có dữ liệu. "
                "Độ phủ = số tiêu chí có dữ liệu / tổng tiêu chí bật.")
     if preview_rows:
-        st.markdown("**Đánh giá sơ bộ — bổ sung dữ liệu BCTC R2**")
-        st.caption("BCTC lưu trữ chưa đối chiếu công bố chính thức. Kết quả sơ bộ không "
-                   "thay thế đánh giá chính thức hoặc tín hiệu mua/bán.")
+        st.markdown("**Đánh giá sơ bộ từ BCTC AURA**")
+        st.caption("Nguồn BCTC: Kho AURA (R2). Nguồn giá (nếu có): SSI FastConnect V3. "
+                   "Kết quả sơ bộ được trình bày riêng, không thay đổi tín hiệu mua/bán.")
         preview_df = pd.DataFrame(visible_rows(preview_rows))
         preview_df["% hợp"] = pd.to_numeric(preview_df["% hợp"], errors="coerce")
         st.dataframe(preview_df, hide_index=True, use_container_width=True,
                      column_config={"% hợp": st.column_config.ProgressColumn(
                          "% hợp", min_value=0, max_value=100, format="%d%%")})
         years_display = ", ".join(f"{key}:{years.get(key, '?')}" for key in applied)
-        st.caption(f"Đã bổ sung {len(applied)} chỉ tiêu thiếu từ R2 (năm thực tế: {years_display}).")
+        st.caption(f"Đã bổ sung {len(applied)} chỉ tiêu từ BCTC AURA (năm: {years_display}).")
     elif r2_values:
         st.info("BCTC R2 đã đọc được, nhưng không có chỉ tiêu thiếu phù hợp để bổ sung vào bộ lọc.")
     else:

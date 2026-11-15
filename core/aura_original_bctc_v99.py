@@ -161,7 +161,10 @@ def render_original_statements(symbol: str) -> bool:
         return False
     statements, metadata = result
     st.subheader("Báo cáo tài chính (2021–2025)")
-    st.caption("Nguồn: BCTC trên hệ thống; chưa đối chiếu công bố chính thức, chỉ dùng tham khảo.")
+    st.caption("Nguồn BCTC: Kho dữ liệu tài chính AURA · lưu trữ Cloudflare R2.")
+    with st.expander("Chi tiết nguồn BCTC", expanded=False):
+        st.caption("Hồ sơ dữ liệu: " + str((metadata or {}).get("source") or "Chưa ghi nhận nhà cung cấp gốc"))
+        st.caption("Đối chiếu tài liệu gốc: " + ("Đã ghi nhận trong dữ liệu" if (metadata or {}).get("source_verified") is True else "Chưa có chứng từ xác nhận trong dữ liệu"))
     for kind, label in _NAMES.items():
         if kind not in statements:
             continue
@@ -185,7 +188,7 @@ def render_original_ratios(symbol: str) -> bool:
     if ratios.empty:
         return False
     st.subheader("Tỷ số tài chính")
-    st.caption("Tính từ BCTC trên hệ thống; chưa đối chiếu công bố chính thức.")
+    st.caption("Nguồn: Tính từ cùng BCTC AURA đang lưu trên Cloudflare R2.")
     st.dataframe(ratios.style.format("{:,.2f}"), use_container_width=True, height=380)
     chosen = st.selectbox("Xem biểu đồ tỷ số", list(ratios.index), key="v99_local_ratio_" + symbol)
     series = pd.to_numeric(ratios.loc[chosen], errors="coerce").dropna()

@@ -96,7 +96,7 @@ def annotate_rows(symbol: str, current_rows: list, criteria: list, *, price_vnd=
         if d.get("trang_thai") == "Thiếu dữ liệu" and key in refs:
             value, year, unit = refs[key]
             d["trang_thai"] = "Tham khảo"
-            d["gia_tri"] = f"{_vn_number(value)} {unit} · BCTC {year} (chưa đối chiếu)"
+            d["gia_tri"] = f"{_vn_number(value)} {unit} · BCTC {year} (AURA/R2)"
             count += 1
         result.append(d)
     return result, count
