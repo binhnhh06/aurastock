@@ -118,6 +118,20 @@ def _gia_ssi_cho_the(ma_cp, gia_eod_vnd, ngay_eod=None):
     if gia_eod_vnd is None:
         result["detail"] = "Chưa có giá EOD hợp lệ"
         return result
+    # AURA_V97_SSI_WEBSOCKET_PRICE_DISPLAY
+    # Best-effort, timestamp-verified SSI WebSocket price. EOD continues to drive
+    # all analytics, MA/RSI/X10, charts and cached research results.
+    try:
+        from core.aura_ssi_realtime_v97 import display_live_quote
+        live = display_live_quote(ma_cp, gia_eod_vnd, ngay_eod)
+        if live.get("price") is not None:
+            result.update(live)
+            return result
+        if live.get("detail"):
+            result["detail"] = live["detail"]
+    except (ImportError, OSError, RuntimeError, ValueError, TypeError, AttributeError):
+        # Fail closed: never label an unknown price as LIVE.
+        result["detail"] = "Giá EOD · SSI WebSocket chưa sẵn sàng"
     try:
         from core.ssi_market_live import (request_live_symbol, read_snapshot,
                                           quote_view, date_label)
