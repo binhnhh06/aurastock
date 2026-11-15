@@ -404,6 +404,9 @@ with tabs[0]:
         # AURA_CANDIDATE_STYLES_PANEL_V1: independent research candidates, never auto BUY
         from core.aura_buy_styles import danh_gia_ung_vien
         ung_vien = danh_gia_ung_vien(gia, ty_so, r.get("vni"), gtgd=xep.get("gtgd"))
+        # AURA_V107: show both historical and current verdicts without changing scoring.
+        from core.aura_signal_explain_v107 import render_signal_explanation
+        render_signal_explanation(xep, ung_vien)
         with st.expander("Ứng viên theo triết lý đầu tư (không phải lệnh MUA)", expanded=True):
             st.info(ung_vien["nhan"])
             if ung_vien["phong_cach"]:

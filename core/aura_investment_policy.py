@@ -55,6 +55,7 @@ def audit_policy(gia, kq, ty_so, vni, base, *, now=None):
     x = dict(base)
     x['dk_mua_x10_goc'] = base.get('dk_mua', [])
     x['dk_ban_x10_goc'] = base.get('dk_ban', [])
+    x['tin_hieu_x10_goc'] = base.get('tin_hieu', 'CHƯA XÁC ĐỊNH')
     x['phong_cach_dat'] = []
     x['chien_luoc'] = {}
     x['ly_do_tin_hieu'] = ''
