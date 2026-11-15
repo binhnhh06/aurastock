@@ -434,6 +434,7 @@ with tabs[1]:
         st.info("Bấm **Phân tích** trước để xem mã có hợp khẩu vị của bạn không.")
     else:
         st.subheader(f"{ma} và khẩu vị {ten_kv}")
+        st.caption("Điểm ở phần trên sử dụng dữ liệu đã xác minh; xem phần đánh giá sơ bộ BCTC R2 bên dưới khi có dữ liệu.")
         st.markdown(f"<div class='x10-card' style='background:{kv['mau']}'><b style='font-size:20px'>{kv['hang']}</b><br>"
                     f"{tom_tat(ma, ten_kv, kv)}"
                     f"{thanh_phan_tram(kv['ty_le'] or 0)}</div>", unsafe_allow_html=True)
@@ -461,19 +462,11 @@ with tabs[1]:
                     f"<div class='x10-row'>{tag_trang_thai(d['trang_thai'])}<div style='flex:1'><b>{d['nhan']}</b>"
                     f"<div class='x10-small' style='color:#6B6389;opacity:1'>Ngưỡng: {d['nguong']}</div></div>"
                     f"<div style='font-weight:700'>{d['gia_tri']}</div></div>" for d in ds), unsafe_allow_html=True)
-        st.subheader("Mã này hợp khẩu vị nào nhất?")
-        st.caption("So sánh nhanh với ngưỡng mặc định của từng khẩu vị có sẵn.")
-        ctx = ngu_canh_tu_ket_qua(r)
-        bang = []
-        for k, v in KHAU_VI.items():
-            if k == "tuy_chinh":
-                continue
-            kq_k = danh_gia(ctx, cau_hinh_khau_vi(k))
-            bang.append({"Khẩu vị": v["ten"], "% hợp": round(kq_k["ty_le"] or 0), "Đạt": f"{kq_k['dat']}/{kq_k['dat'] + kq_k['khong']}",
-                         "Mức hợp": kq_k["hang"]})
-        bang.sort(key=lambda x: -x["% hợp"])
-        st.dataframe(bang, hide_index=True, use_container_width=True,
-                     column_config={"% hợp": st.column_config.ProgressColumn("% hợp", min_value=0, max_value=100, format="%d%%")})
+        # AURA_V110_SUITABILITY_COMPARISON: display-only, source-aware ranking.
+        from core.aura_suitability_consistency_v110 import render_suitability_comparison
+        render_suitability_comparison(
+            ma, r, KHAU_VI, cau_hinh_khau_vi, danh_gia, ngu_canh_tu_ket_qua
+        )
 
 with tabs[2]:
     st.subheader("Biểu đồ kỹ thuật đa khung thời gian")
