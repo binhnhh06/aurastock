@@ -86,6 +86,102 @@ def _download_index(market_data, symbol, root, days=950):
     return persist(symbol, df, path, cutoff)
 
 
+
+def _save_catalogue_portable(frame, path):
+    """Write only verified SSI catalogue fields as a portable, atomic CSV.
+
+    Avoid pandas' mixed object-dtype CSV formatter for the cloud pilot.
+    Missing optional fields remain empty. Never fill missing tickers or prices.
+    On validation/write failure, preserve any existing catalogue unchanged.
+    """
+    import csv
+    import math
+    import re
+    import tempfile
+    import pandas as pd
+
+    columns = (
+        'symbol', 'board', 'name', 'icb_code', 'sector',
+        'stock_type', 'asset_class', 'equity_scan', 'last_trading_date',
+    )
+    required = {'symbol', 'board', 'asset_class'}
+    if not isinstance(frame, pd.DataFrame) or frame.empty:
+        raise ValueError('CATALOGUE_EMPTY_OR_INVALID')
+    if not required.issubset(frame.columns):
+        raise ValueError('CATALOGUE_REQUIRED_COLUMNS_MISSING')
+    if frame.columns.has_duplicates:
+        raise ValueError('CATALOGUE_DUPLICATE_COLUMNS')
+
+    def safe_string(value):
+        if value is None:
+            return ''
+        if isinstance(value, (float, int)) and not isinstance(value, bool):
+            try:
+                if not math.isfinite(float(value)):
+                    return ''
+            except (ValueError, OverflowError, TypeError):
+                return ''
+        try:
+            # pd.NA has no bool conversion; stringify explicitly.
+            result = str(value).strip()
+        except (ValueError, TypeError, UnicodeError):
+            return ''
+        if result in ('<NA>', 'nan', 'NaN', 'None', 'NaT'):
+            return ''
+        # The market catalogue has no reason to retain multiline fields.
+        return result.replace('\r', ' ').replace('\n', ' ')
+
+    rows = []
+    for raw in frame.to_dict(orient='records'):
+        item = {col: safe_string(raw.get(col)) for col in columns}
+        item['symbol'] = item['symbol'].upper()
+        item['board'] = item['board'].upper()
+        item['asset_class'] = item['asset_class'].upper()
+        if not re.fullmatch(r'[A-Z0-9]{2,12}', item['symbol']):
+            raise ValueError('CATALOGUE_INVALID_SYMBOL')
+        if not item['board'] or not item['asset_class']:
+            raise ValueError('CATALOGUE_INVALID_BOARD_OR_CLASS')
+        item['equity_scan'] = (
+            'True' if safe_string(raw.get('equity_scan')).lower() in ('true', '1', 'yes')
+            else 'False'
+        )
+        rows.append(item)
+    if not rows:
+        raise ValueError('CATALOGUE_NO_VALID_ROWS')
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_name = None
+    try:
+        # Unique temporary name prevents collisions across cloud sessions.
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.tmp', prefix='catalogue_',
+            dir=str(path.parent), encoding='utf-8-sig', newline='', delete=False,
+        ) as f:
+            temp_name = f.name
+            writer = csv.DictWriter(f, fieldnames=columns, lineterminator='\n')
+            writer.writeheader()
+            writer.writerows(rows)
+        # Verify the saved file before replacing a valid previous catalogue.
+        with open(temp_name, encoding='utf-8-sig', newline='') as f:
+            reader = csv.DictReader(f)
+            if not required.issubset(reader.fieldnames or []):
+                raise ValueError('CATALOGUE_WRITTEN_HEADER_INVALID')
+            written = list(reader)
+            if len(written) != len(rows):
+                raise ValueError('CATALOGUE_WRITTEN_ROW_COUNT_MISMATCH')
+            if [r['symbol'] for r in written] != [r['symbol'] for r in rows]:
+                raise ValueError('CATALOGUE_WRITTEN_SYMBOL_MISMATCH')
+        os.replace(temp_name, path)
+    finally:
+        if temp_name:
+            try:
+                Path(temp_name).unlink(missing_ok=True)
+            except OSError:
+                pass
+    return len(rows)
+
+
 class CloudBootstrapError(RuntimeError):
     """Only sanitized, fixed-code diagnostics cross into the Streamlit UI."""
 
@@ -102,7 +198,7 @@ def _sync(root, limit=12, *, pause=0.6):
         stage = "SDK_IMPORT"
         from ssi_sdk import Auth, Data, Config
         stage = "PROJECT_MODULE_IMPORT"
-        from core.ssi_universe import collect_market_catalogue, save_catalogue
+        from core.ssi_universe import collect_market_catalogue
         from scripts.ssi_fetch_symbol import download_with_service
 
         stage = "CREDENTIALS"
@@ -132,7 +228,7 @@ def _sync(root, limit=12, *, pause=0.6):
                     raise RuntimeError("SSI_CATALOGUE_TOO_SMALL_OR_WRONG_SCHEMA")
                 subset = catalogue.loc[catalogue["symbol"].isin(selected)].copy()
                 stage = "SAVE_CATALOGUE"
-                save_catalogue(subset, root / "data" / "ssi_cache" / "market_symbols.csv")
+                _save_catalogue_portable(subset, root / "data" / "ssi_cache" / "market_symbols.csv")
                 stage = "DOWNLOAD_STOCK_BARS"
                 for symbol in selected:
                     try:
@@ -179,8 +275,8 @@ def bootstrap_cloud():
     with LOCK:
         d = _read_state()
         interval = 18 * 60 if d.get("status") == "OK" else 60
-        if d.get("diag_version") != "9.2.1" or not _fresh(d, interval):
-            d = {"status": "RUNNING", "diag_version": "9.2.1", "attempt_at": datetime.now(TZ).isoformat()}
+        if d.get("diag_version") != "9.2.2" or not _fresh(d, interval):
+            d = {"status": "RUNNING", "diag_version": "9.2.2", "attempt_at": datetime.now(TZ).isoformat()}
             _save_state(d)
             try:
                 limit = max(3, min(30, int(_setting("AURA_CLOUD_PILOT_LIMIT", "12"))))
