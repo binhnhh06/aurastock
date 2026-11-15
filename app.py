@@ -559,7 +559,7 @@ with tabs[2]:
 with tabs[3]:
     # AURA_V99_LOCAL_BCTC_PARITY
     _v99_fin_shown = False
-    if r and not bctc:
+    if r:
         try:
             from core.aura_original_bctc_v99 import render_original_statements
             _v99_fin_shown = render_original_statements(ma)
@@ -590,7 +590,7 @@ with tabs[3]:
 with tabs[4]:
     # AURA_V99_LOCAL_BCTC_PARITY_RATIOS
     _v99_ratios_shown = False
-    if r and ty_so.empty:
+    if r:
         try:
             from core.aura_original_bctc_v99 import render_original_ratios
             _v99_ratios_shown = render_original_ratios(ma)
