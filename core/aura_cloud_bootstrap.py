@@ -86,54 +86,83 @@ def _download_index(market_data, symbol, root, days=950):
     return persist(symbol, df, path, cutoff)
 
 
+class CloudBootstrapError(RuntimeError):
+    """Only sanitized, fixed-code diagnostics cross into the Streamlit UI."""
+
+    def __init__(self, stage: str, original_type: str):
+        self.stage = stage
+        self.original_type = original_type
+        super().__init__(stage + ":" + original_type)
+
+
 def _sync(root, limit=12, *, pause=0.6):
     """One authenticated SSI Data session for the entire pilot batch."""
-    from ssi_sdk import Auth, Data, Config
-    from core.ssi_universe import collect_market_catalogue, save_catalogue
-    from scripts.ssi_fetch_symbol import download_with_service
+    stage = "START"
+    try:
+        stage = "SDK_IMPORT"
+        from ssi_sdk import Auth, Data, Config
+        stage = "PROJECT_MODULE_IMPORT"
+        from core.ssi_universe import collect_market_catalogue, save_catalogue
+        from scripts.ssi_fetch_symbol import download_with_service
 
-    creds = {k: _setting(k) for k in CREDENTIALS}
-    if not all(creds.values()):
-        raise RuntimeError("MISSING_SSI_SECRETS")
-    config = Config(client_id=creds["SSI_CLIENT_ID"],
-                    api_key=creds["SSI_API_KEY"],
-                    api_secret=creds["SSI_API_SECRET"])
-    ok, errors, idx_ok = [], [], []
-    with Auth(config) as auth:
-        auth.authenticate()
-        with Data(auth) as data:
-            catalogue = collect_market_catalogue(data.market_data)
-            catalogue["symbol"] = catalogue["symbol"].astype(str).str.upper()
-            # Only show a truthful, bounded, SSI-returned comparison universe.
-            usable = catalogue.loc[catalogue["asset_class"].eq("EQUITY")].copy()
-            selected = [s for s in PILOT if s in set(usable["symbol"])][:limit]
-            if len(selected) < 3:
-                raise RuntimeError("SSI_CATALOGUE_TOO_SMALL_OR_WRONG_SCHEMA")
-            subset = catalogue.loc[catalogue["symbol"].isin(selected)].copy()
-            save_catalogue(subset, root / "data" / "ssi_cache" / "market_symbols.csv")
-            for symbol in selected:
-                try:
-                    status, n = download_with_service(data, symbol, days=950, root=root)
-                    if status == "OK" and n >= 60:
-                        ok.append(symbol)
-                    else:
-                        errors.append(symbol + ":NO_BARS")
-                except Exception as exc:
-                    errors.append(symbol + ":" + type(exc).__name__)
-                time.sleep(max(0.2, min(float(pause), 3)))
-            for symbol in INDEXES:
-                try:
-                    if _download_index(data.market_data, symbol, root) >= 60:
-                        idx_ok.append(symbol)
-                    else:
-                        errors.append(symbol + ":NO_BARS")
-                except Exception as exc:
-                    errors.append(symbol + ":" + type(exc).__name__)
-                time.sleep(max(0.2, min(float(pause), 3)))
-    return {"status": "OK" if ok else "NO_STOCK_BARS",
-            "source": "SSI FastConnect V3 (temporary cloud cache)",
-            "pilot_symbols": selected, "stock_ok": ok, "index_ok": idx_ok,
-            "failed": errors}
+        stage = "CREDENTIALS"
+        creds = {k: _setting(k) for k in CREDENTIALS}
+        if not all(creds.values()):
+            raise RuntimeError("MISSING_SSI_SECRETS")
+        stage = "CONFIG"
+        config = Config(client_id=creds["SSI_CLIENT_ID"],
+                        api_key=creds["SSI_API_KEY"],
+                        api_secret=creds["SSI_API_SECRET"])
+        ok, errors, idx_ok = [], [], []
+        stage = "AUTH_CONTEXT"
+        with Auth(config) as auth:
+            stage = "AUTHENTICATE"
+            auth.authenticate()
+            stage = "DATA_CONTEXT"
+            with Data(auth) as data:
+                stage = "CATALOGUE_API"
+                catalogue = collect_market_catalogue(data.market_data)
+                stage = "CATALOGUE_SCHEMA"
+                catalogue["symbol"] = catalogue["symbol"].astype(str).str.upper()
+                # Only show a truthful, bounded, SSI-returned comparison universe.
+                stage = "SELECT_EQUITIES"
+                usable = catalogue.loc[catalogue["asset_class"].eq("EQUITY")].copy()
+                selected = [s for s in PILOT if s in set(usable["symbol"])][:limit]
+                if len(selected) < 3:
+                    raise RuntimeError("SSI_CATALOGUE_TOO_SMALL_OR_WRONG_SCHEMA")
+                subset = catalogue.loc[catalogue["symbol"].isin(selected)].copy()
+                stage = "SAVE_CATALOGUE"
+                save_catalogue(subset, root / "data" / "ssi_cache" / "market_symbols.csv")
+                stage = "DOWNLOAD_STOCK_BARS"
+                for symbol in selected:
+                    try:
+                        status, n = download_with_service(data, symbol, days=950, root=root)
+                        if status == "OK" and n >= 60:
+                            ok.append(symbol)
+                        else:
+                            errors.append(symbol + ":NO_BARS")
+                    except Exception as exc:
+                        errors.append(symbol + ":" + type(exc).__name__)
+                    time.sleep(max(0.2, min(float(pause), 3)))
+                stage = "DOWNLOAD_INDEX_BARS"
+                for symbol in INDEXES:
+                    try:
+                        if _download_index(data.market_data, symbol, root) >= 60:
+                            idx_ok.append(symbol)
+                        else:
+                            errors.append(symbol + ":NO_BARS")
+                    except Exception as exc:
+                        errors.append(symbol + ":" + type(exc).__name__)
+                    time.sleep(max(0.2, min(float(pause), 3)))
+        return {"status": "OK" if ok else "NO_STOCK_BARS",
+                "source": "SSI FastConnect V3 (temporary cloud cache)",
+                "pilot_symbols": selected, "stock_ok": ok, "index_ok": idx_ok,
+                "failed": errors}
+    except CloudBootstrapError:
+        raise
+    except Exception as exc:
+        # Do not store, print or display exception values: SDK may echo requests.
+        raise CloudBootstrapError(stage, type(exc).__name__) from None
 
 
 def bootstrap_cloud():
@@ -150,8 +179,8 @@ def bootstrap_cloud():
     with LOCK:
         d = _read_state()
         interval = 18 * 60 if d.get("status") == "OK" else 60
-        if not _fresh(d, interval):
-            d = {"status": "RUNNING", "attempt_at": datetime.now(TZ).isoformat()}
+        if d.get("diag_version") != "9.2.1" or not _fresh(d, interval):
+            d = {"status": "RUNNING", "diag_version": "9.2.1", "attempt_at": datetime.now(TZ).isoformat()}
             _save_state(d)
             try:
                 limit = max(3, min(30, int(_setting("AURA_CLOUD_PILOT_LIMIT", "12"))))
@@ -159,7 +188,8 @@ def bootstrap_cloud():
                 d.update(result)
             except Exception as exc:
                 d["status"] = "ERROR"
-                d["error_type"] = type(exc).__name__
+                d["error_type"] = getattr(exc, "original_type", type(exc).__name__)
+                d["error_stage"] = getattr(exc, "stage", "PILOT_LIMIT_OR_SETTINGS")
                 # Never display source exception text; SDK can include request details.
             _save_state(d)
         else:
@@ -167,7 +197,15 @@ def bootstrap_cloud():
     try:
         import streamlit as st
         if d.get("status") != "OK":
-            st.sidebar.warning("SSI cloud chưa đồng bộ được: " + d.get("error_type", d.get("status", "UNKNOWN")))
+            stage = str(d.get("error_stage") or d.get("status", "UNKNOWN"))
+            kind = str(d.get("error_type") or d.get("status", "UNKNOWN"))
+            st.sidebar.warning("SSI cloud chưa đồng bộ: " + stage + " / " + kind)
+            failures = d.get("failed", [])
+            if isinstance(failures, list) and failures:
+                # Errors are internally formatted as symbol:type, never exception text.
+                st.sidebar.caption("Mã không có nến: " + ", ".join(
+                    str(v)[:45] for v in failures[:3]
+                ))
         else:
             st.sidebar.caption("SSI EOD cloud · bản demo " + str(len(d.get("stock_ok", []))) +
                                " mã; không phải toàn thị trường hay realtime.")
