@@ -267,6 +267,25 @@ def _sync(root, limit=12, *, pause=0.6):
 
 def bootstrap_cloud():
     """Call AFTER st.set_page_config, on all three app entrypoints."""
+
+    # AURA_V95_R2_FULL_MARKET
+    # Restore SSI EOD from a PRIVATE user-owned R2 bucket before the pilot.
+    # This runs only once per process/manifest TTL; no SSI requests per tab rerun.
+    try:
+        from core.aura_r2_market import restore_if_configured
+        _aura_full = restore_if_configured(ROOT)
+    except Exception as _aura_full_error:
+        _aura_full = {"status": "ERROR", "error_type": type(_aura_full_error).__name__}
+    if _aura_full.get("status") == "OK" and int(_aura_full.get("count", 0)) >= 100:
+        try:
+            import streamlit as st
+            st.sidebar.caption(
+                "SSI EOD · snapshot private: " + str(_aura_full["count"])
+                + " mã có giá; dữ liệu không phải realtime."
+            )
+        except (ImportError, RuntimeError):
+            pass
+        return
     if _setting("AURA_CLOUD_ALLOW_SSI").lower() not in ("1", "true", "yes"):
         return
     # Avoid leaking SSI keys in exception repr, logs and UI messages.
