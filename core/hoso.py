@@ -46,7 +46,7 @@ def _gia_tri_cuoi(s):
     return float(s.iloc[-1]), s.index[-1]
 
 
-def dinh_gia_tu_bctc(ma, bctc, gia):
+def dinh_gia_tu_bctc(ma, bctc, gia, *, allow_share_estimate=True):
     """P/E, P/B tự tính từ giá hiện tại và BCTC. Trả (pe, pb, ghi_chu).
     Ưu tiên EPS, BVPS (đồng/cp) trong BCTC; thiếu thì tính qua số cp lưu hành từ vnstock."""
     if gia is None or gia.empty:
@@ -77,8 +77,8 @@ def dinh_gia_tu_bctc(ma, bctc, gia):
                     pb = pb_thu
                     ghi.append(f"P/B theo giá trị sổ sách năm {nam}")
 
-    # Cách 2: dự phòng qua số cổ phiếu lưu hành (vnstock)
-    if pe is None or pb is None:
+    # Cách 2: chỉ dùng số CP dự phòng khi dữ liệu không phải bản R2 chưa kiểm chứng.
+    if (pe is None or pb is None) and allow_share_estimate:
         so_cp = _so_cp(ma)
         bctc = bctc or {}
         lnst, nam = _gia_tri_cuoi(lay_dong(bctc.get("income_statement"), "Lãi/(lỗ) thuần sau thuế", "Lợi nhuận sau thuế"))
@@ -256,17 +256,32 @@ def ve_tab_hoso(r):
 
     ma, ty_so, bctc, gia, vni = r["ma"], r["ty_so"], r["bctc"], r["gia"], r.get("vni")
     info = industry.thong_tin(ma)
+    # AURA_V104_COMPANY_IDENTITY: SSI catalogue fallback for display only.
+    _sector_reference = ""
+    if not info.get("ten"):
+        from core.company_intelligence import company_meta
+        _company_name, _sector_reference = company_meta(ma)
+        info = dict(info)
+        info["ten"] = _company_name
     nganh = " › ".join(x for x in (info.get("icb1", ""), info.get("icb2", ""), info.get("icb3", "")) if x)
     gia_hien_tai = float(gia["close"].iloc[-1]) if gia is not None and not gia.empty else 0
     if 0 < gia_hien_tai < 1000:  # vnstock trả giá theo nghìn đồng
         gia_hien_tai *= 1000
 
     st.markdown(f"### Hồ sơ chuyên sâu & Định giá: **{ma}** - {info.get('ten', '')}")
-    st.caption(f"Ngành ICB: {nganh if nganh else 'Chưa cập nhật'} | Giá hiện tại: **{so_vn(gia_hien_tai, 0)} VND**")
+    _sector_label = ("Ngành ICB: " + nganh) if nganh else (
+        "Ngành tham chiếu SSI: " + _sector_reference if _sector_reference else "Ngành: Chưa cập nhật"
+    )
+    st.caption(f"{_sector_label} | Giá hiện tại: **{so_vn(gia_hien_tai, 0)} VND**")
+    if r.get("_aura_v104_unverified_display"):
+        st.caption("Số liệu định giá và phân loại ở tab này dựa trên BCTC bản local đã lưu R2, "
+                   "chưa đối chiếu công bố chính thức; chỉ để tham khảo, KHÔNG tính vào X10/Smart Rating.")
 
     # 1. Suất cổ tức & Định giá (tự tính từ giá hiện tại + BCTC)
     st.subheader("1. Suất Cổ tức & Định giá")
-    pe, pb, ghi_chu = dinh_gia_tu_bctc(ma, bctc, gia)
+    pe, pb, ghi_chu = dinh_gia_tu_bctc(
+        ma, bctc, gia, allow_share_estimate=not r.get("_aura_v104_unverified_display", False)
+    )
     suat = uoc_suat_co_tuc(ty_so, pe)
 
     c1, c2, c3, c4 = st.columns(4)

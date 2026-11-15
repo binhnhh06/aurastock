@@ -364,7 +364,14 @@ tabs = st.tabs([
 if r:
     ma, bctc, ty_so, gia, kq, xep = r["ma"], r["bctc"], r["ty_so"], r["gia"], r["kq"], r["xep"]
     thong_tin = industry.thong_tin(ma)
-    ten_nganh = " · ".join(x for x in (thong_tin.get("ten", ""), thong_tin.get("icb2", "")) if x)
+    # AURA_V104_COMPANY_IDENTITY: identity only; no financial or score changes.
+    from core.company_intelligence import company_meta
+    _company_name, _company_sector = company_meta(
+        ma,
+        sector=thong_tin.get("icb2") or thong_tin.get("icb1", ""),
+        company=thong_tin.get("ten", ""),
+    )
+    ten_nganh = " · ".join(x for x in (_company_name, _company_sector) if x)
     kv = danh_gia(ngu_canh_tu_ket_qua(r), cfg)
     # V10.3: private R2 financial disclosures are shown inside each financial tab.
     # Do not render duplicate global warnings below every tab.
@@ -661,7 +668,24 @@ with tabs[6]:
 
 with tabs[7]:
     # Show the business profile FIRST; place external headlines lower down.
-    ve_tab_hoso(r)
+    # AURA_V104_HOSO_R2_DISPLAY: private R2 BCTC is used in this tab ONLY.
+    # Never mutate session_state["r"] or rerun X10 / Smart Rating with unverified data.
+    _hoso_view = r
+    if r and file_bctc is None:
+        try:
+            from core.aura_original_bctc_v99 import load_original
+            from core.analysis import tinh_ty_so
+            _snapshot = load_original(r["ma"])
+            if _snapshot:
+                _statements, _source_meta = _snapshot
+                if _statements:
+                    _hoso_view = dict(r)
+                    _hoso_view["bctc"] = _statements
+                    _hoso_view["ty_so"] = tinh_ty_so(_statements)
+                    _hoso_view["_aura_v104_unverified_display"] = True
+        except (ImportError, RuntimeError, ValueError, TypeError, KeyError, AttributeError):
+            pass
+    ve_tab_hoso(_hoso_view)
     if r:
         st.divider()
         from core.company_intelligence import render_company_news
