@@ -439,21 +439,28 @@ with tabs[1]:
                     f"{thanh_phan_tram(kv['ty_le'] or 0)}</div>", unsafe_allow_html=True)
         if not kv["dong"]:
             st.info("Hãy bật ít nhất một tiêu chí ở thanh bên (mục Tuỳ chỉnh tiêu chí lọc).")
+        # AURA_V109_INLINE_R2: show R2 reference values in the missing suitability rows; official score unchanged.
+        _kv_display_rows = kv["dong"]
+        if file_bctc is None:
+            try:
+                from core.aura_khauvi_inrow_v109 import annotate_rows
+                _kv_display_rows, _ref_count = annotate_rows(
+                    ma, kv["dong"], TIEU_CHI, price_vnd=kq.get("Giá đóng cửa"))
+                if _ref_count:
+                    st.caption(
+                        f"{_ref_count} tiêu chí có số liệu BCTC R2 tham khảo. "
+                        "Các dòng Tham khảo KHÔNG được tính là Đạt hoặc Không đạt "
+                        "và KHÔNG thay đổi % hợp khẩu vị, điểm đánh giá chính thức.")
+            except (ImportError, RuntimeError, ValueError, TypeError, KeyError, AttributeError, IndexError, ZeroDivisionError):
+                st.caption("Tỷ số BCTC R2 tham khảo chưa đọc được cho bảng khẩu vị.")
         for nhom in NHOM:
-            ds = [d for d in kv["dong"] if d["nhom"] == nhom]
+            ds = [d for d in _kv_display_rows if d["nhom"] == nhom]
             if ds:
                 st.markdown(f"**{nhom}**")
                 st.markdown("".join(
                     f"<div class='x10-row'>{tag_trang_thai(d['trang_thai'])}<div style='flex:1'><b>{d['nhan']}</b>"
                     f"<div class='x10-small' style='color:#6B6389;opacity:1'>Ngưỡng: {d['nguong']}</div></div>"
                     f"<div style='font-weight:700'>{d['gia_tri']}</div></div>" for d in ds), unsafe_allow_html=True)
-        # AURA_V105_REFERENCE_BCTC: supplementary research display only.
-        if file_bctc is None:
-            try:
-                from core.aura_khauvi_reference_v105 import render_reference_ratios
-                render_reference_ratios(ma, cfg)
-            except (ImportError, RuntimeError, ValueError, TypeError, KeyError, AttributeError):
-                st.caption("Bảng tỷ số BCTC tham khảo chưa sẵn sàng cho mã này.")
         st.subheader("Mã này hợp khẩu vị nào nhất?")
         st.caption("So sánh nhanh với ngưỡng mặc định của từng khẩu vị có sẵn.")
         ctx = ngu_canh_tu_ket_qua(r)
