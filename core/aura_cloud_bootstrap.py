@@ -268,6 +268,22 @@ def _sync(root, limit=12, *, pause=0.6):
 def bootstrap_cloud():
     """Call AFTER st.set_page_config, on all three app entrypoints."""
 
+    # AURA_V98_PRIVATE_FINANCIAL_RESTORE
+    # Download candidate BCTC into the ephemeral app cache BEFORE pages read it.
+    # Any failure must leave the already-working SSI EOD/R2 path unchanged.
+    try:
+        from core.aura_r2_financial_v98 import restore_if_configured as _fin_r2_restore
+        _fin_r2_result = _fin_r2_restore(ROOT)
+        if _fin_r2_result.get('status') == 'OK':
+            try:
+                import streamlit as _aura_st
+                _aura_st.sidebar.caption('BCTC sơ bộ 2021–2025 · R2 private: '
+                                         + str(_fin_r2_result.get('symbols', 0)) + ' mã; chưa tự chấm điểm.')
+            except (ImportError, RuntimeError, AttributeError):
+                pass
+    except Exception:
+        # Do not reveal credentials or cloud exceptions to the UI.
+        pass
     # AURA_V95_R2_FULL_MARKET
     # Restore SSI EOD from a PRIVATE user-owned R2 bucket before the pilot.
     # This runs only once per process/manifest TTL; no SSI requests per tab rerun.

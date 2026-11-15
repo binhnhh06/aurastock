@@ -555,8 +555,16 @@ with tabs[2]:
             st.error(f"Không thể vẽ biểu đồ kỹ thuật: {type(exc).__name__}. Kiểm tra dữ liệu OHLCV SSI.")
 
 with tabs[3]:
+    # AURA_V98_ANNUAL_CANDIDATE_PANEL
+    # Supplement the original audited-BCTC tab, never replace real statements.
+    if r:
+        try:
+            from core.aura_r2_financial_v98 import render_symbol_annual
+            render_symbol_annual(ROOT, ma)
+        except (ImportError, RuntimeError, ValueError, TypeError, AttributeError):
+            pass
     if not r or not bctc:
-        st.info("Không có dữ liệu BCTC cho mã này." if r else "Bấm **Phân tích** để xem báo cáo tài chính.")
+        st.info("Chưa có BCTC gốc đã xác minh cho mã này; tỷ số sơ bộ bên trên không thay thế BCTC gốc." if r else "Bấm **Phân tích** để xem báo cáo tài chính.")
     else:
         for k, ten in STATEMENTS.items():
             if k in bctc:
