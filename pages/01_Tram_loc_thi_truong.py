@@ -41,6 +41,10 @@ FIN_PATH = ROOT / "data" / "fundamentals" / "processed" / "financial_features_an
 LEDGER_PATH = ROOT / "data" / "ssi_cache" / "market_sync_status.csv"
 
 st.set_page_config(page_title="AURA | Trạm lọc thị trường", page_icon=favicon(), layout="wide")
+# AURA_CLOUD_SSI_PILOT_V92
+from core.aura_cloud_bootstrap import bootstrap_cloud
+bootstrap_cloud()
+
 ap_dung_theme()
 dieu_huong_trang()
 st.markdown("""<style>

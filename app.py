@@ -22,6 +22,10 @@ from core.theme import (ap_dung_theme, theme_plotly, tieu_de_trang, huong_dan_3_
 
 st.set_page_config(page_title="AURA | Phân tích cổ phiếu", page_icon=favicon(), layout="wide")
 
+# AURA_CLOUD_SSI_PILOT_V92
+from core.aura_cloud_bootstrap import bootstrap_cloud
+bootstrap_cloud()
+
 ap_dung_theme()
 dieu_huong_trang()
 tieu_de_trang(tieu_de="AURA · Phân tích cổ phiếu",

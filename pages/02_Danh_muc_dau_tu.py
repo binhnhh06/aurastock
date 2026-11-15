@@ -29,6 +29,16 @@ from core.portfolio_store import (
 
 DB = ROOT / 'data' / 'portfolio' / 'aura_portfolio.sqlite3'
 st.set_page_config(page_title='AURA | Danh mục đầu tư', page_icon=favicon(), layout='wide')
+# AURA_CLOUD_SSI_PILOT_V92
+from core.aura_cloud_bootstrap import bootstrap_cloud
+bootstrap_cloud()
+# AURA_CLOUD_PORTFOLIO_ISOLATION_V92
+from core.aura_cloud_portfolio import is_cloud_demo, session_db
+if is_cloud_demo():
+    DB = session_db(st.session_state)
+    st.sidebar.info('Danh mục DEMO riêng theo phiên; không lưu lâu dài sau khi đóng phiên.')
+
+
 ap_dung_theme()
 dieu_huong_trang()
 
