@@ -279,11 +279,18 @@ def bootstrap_cloud():
     with LOCK:
         d = _read_state()
         interval = 18 * 60 if d.get("status") == "OK" else 60
-        if d.get("diag_version") != "9.2.2" or not _fresh(d, interval):
-            d = {"status": "RUNNING", "diag_version": "9.3.0", "attempt_at": datetime.now(TZ).isoformat()}
+        # V9.4.1: do not re-download SSI on every tab rerun.
+        try:
+            _aura_pilot_limit = max(3, min(30, int(_setting("AURA_CLOUD_PILOT_LIMIT", "12"))))
+        except (TypeError, ValueError):
+            _aura_pilot_limit = 12
+        if (d.get("diag_version") != "9.3.0"
+                or d.get("pilot_limit") != _aura_pilot_limit
+                or not _fresh(d, interval)):
+            d = {"status": "RUNNING", "diag_version": "9.3.0", "pilot_limit": _aura_pilot_limit, "attempt_at": datetime.now(TZ).isoformat()}
             _save_state(d)
             try:
-                limit = max(3, min(30, int(_setting("AURA_CLOUD_PILOT_LIMIT", "12"))))
+                limit = _aura_pilot_limit
                 result = _sync(ROOT, limit=limit)
                 d.update(result)
             except Exception as exc:
