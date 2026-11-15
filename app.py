@@ -557,15 +557,25 @@ with tabs[2]:
             st.error(f"Không thể vẽ biểu đồ kỹ thuật: {type(exc).__name__}. Kiểm tra dữ liệu OHLCV SSI.")
 
 with tabs[3]:
+    # AURA_V99_LOCAL_BCTC_PARITY
+    _v99_fin_shown = False
+    if r and not bctc:
+        try:
+            from core.aura_original_bctc_v99 import render_original_statements
+            _v99_fin_shown = render_original_statements(ma)
+        except (ImportError, RuntimeError, ValueError, TypeError, AttributeError):
+            _v99_fin_shown = False
     # AURA_V98_ANNUAL_CANDIDATE_PANEL
     # Supplement the original audited-BCTC tab, never replace real statements.
-    if r:
+    if r and not _v99_fin_shown:
         try:
             from core.aura_r2_financial_v98 import render_symbol_annual
             render_symbol_annual(Path(__file__).resolve().parent, ma)
         except (ImportError, RuntimeError, ValueError, TypeError, AttributeError):
             pass
-    if not r or not bctc:
+    if _v99_fin_shown:
+        pass
+    elif not r or not bctc:
         st.info("Chưa có BCTC gốc đã xác minh cho mã này; tỷ số sơ bộ bên trên không thay thế BCTC gốc." if r else "Bấm **Phân tích** để xem báo cáo tài chính.")
     else:
         for k, ten in STATEMENTS.items():
@@ -578,8 +588,18 @@ with tabs[3]:
                 st.dataframe(df.style.format("{:,.0f}"), use_container_width=True, height=380)
 
 with tabs[4]:
+    # AURA_V99_LOCAL_BCTC_PARITY_RATIOS
+    _v99_ratios_shown = False
+    if r and ty_so.empty:
+        try:
+            from core.aura_original_bctc_v99 import render_original_ratios
+            _v99_ratios_shown = render_original_ratios(ma)
+        except (ImportError, RuntimeError, ValueError, TypeError, AttributeError):
+            _v99_ratios_shown = False
     # AURA_V982_PROVISIONAL_RATIOS_TAB
-    if not r:
+    if _v99_ratios_shown:
+        pass
+    elif not r:
         st.info("Bấm **Phân tích** để xem tỷ số tài chính.")
     elif ty_so.empty:
         # Display only: provisional R2 research, not audited source and not scores.
