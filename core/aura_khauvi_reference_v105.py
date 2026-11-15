@@ -76,8 +76,6 @@ def render_reference_ratios(symbol: str, config: dict | None = None) -> bool:
     if not rows:
         return False
     st.markdown("#### Tỷ số BCTC tham khảo (R2)")
-    st.caption("Các tỷ số dưới đây được tính từ BCTC lưu trên R2 và CHƯA đối chiếu "
-               "công bố chính thức. Chúng KHÔNG thay thế trạng thái tiêu chí đã xác minh "
-               "phía trên, không thay đổi % hợp khẩu vị, điểm X10 hay Smart Rating.")
+    st.caption("Chỉ tiêu tham khảo từ BCTC chưa đối chiếu công bố chính thức; không thay đổi điểm đánh giá.")
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
     return True

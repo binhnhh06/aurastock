@@ -317,7 +317,7 @@ def _one_card(code, title, board, color, data, today):
 
 CSS = '''
 <style>
-.aura-market-overview{background:linear-gradient(115deg,#6429ED 0%,#9830E9 55%,#CA26D5 100%);
+.aura-market-overview{background:linear-gradient(115deg,#7845BD 0%,#8B51BF 55%,#9D5AC0 100%);
  border:2px solid #1B1233;border-radius:25px;padding:20px 21px 23px;margin:12px 5px 25px 0;
  box-shadow:6px 7px 0 #1B1233,0 16px 26px rgba(47,22,93,.14);color:#fff}
 .aura-market-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:17px}
@@ -365,10 +365,8 @@ def render_vnindex_strip(root: Path):
     header = ('<div class="aura-market-head"><div><strong>' + title + '</strong>'
               '<div><span>4 chỉ số · Điểm, biến động, khối lượng, giá trị giao dịch</span></div></div>'
               '<span class="aura-market-stamp">' + escape(latest_status) + ' · ' + stamp + '</span></div>')
-    foot = ('<div class="aura-market-foot">Nguồn: SSI FastConnect V3 (indexsummary / trade.index / EOD). '
-            'Dữ liệu mỗi chỉ số có thời điểm riêng, hiển thị rõ ngày phiên; dấu — nghĩa là SSI chưa cung cấp dữ liệu hợp lệ. '
-            'VN30 thuộc HOSE nên không cộng khối lượng VN30 vào tổng HOSE. '
-            'Realtime chỉ được ghi khi có tick mới và Worker hoạt động trong phiên.</div>')
+    foot = ('<div class="aura-market-foot">Nguồn: SSI FastConnect V3 · EOD theo ngày phiên từng chỉ số. '
+            'Giá trị giao dịch và khối lượng hiển thị khi có dữ liệu hợp lệ.</div>')
     st.markdown(CSS + '<div class="aura-market-overview">' + header +
                 '<div class="aura-market-grid">' + inner + '</div>' + foot + '</div>',
                 unsafe_allow_html=True)

@@ -160,10 +160,8 @@ def render_original_statements(symbol: str) -> bool:
     if not result:
         return False
     statements, metadata = result
-    st.subheader("BCTC 2021–2025 · bảng chỉ tiêu như bản local")
-    st.caption("Nguồn: BCTC local lưu trên R2 private; chưa đối chiếu công bố chính thức. "
-               "Dữ liệu chỉ dùng tham khảo, không dùng để chấm Smart Rating.")
-    st.caption("Nguồn hiển thị: bản sao dữ liệu local · Thời điểm lưu: " + metadata.get("captured_at", "chưa rõ"))
+    st.subheader("Báo cáo tài chính (2021–2025)")
+    st.caption("Nguồn: BCTC trên hệ thống; chưa đối chiếu công bố chính thức, chỉ dùng tham khảo.")
     for kind, label in _NAMES.items():
         if kind not in statements:
             continue
@@ -186,9 +184,8 @@ def render_original_ratios(symbol: str) -> bool:
     ratios = tinh_ty_so(statements)
     if ratios.empty:
         return False
-    st.subheader("Tỷ số tài chính · tính từ cùng BCTC bản local")
-    st.caption("Tỷ số tính từ BCTC lưu trên R2; chưa đối chiếu báo cáo công bố "
-               "và không tham gia Smart Rating.")
+    st.subheader("Tỷ số tài chính")
+    st.caption("Tính từ BCTC trên hệ thống; chưa đối chiếu công bố chính thức.")
     st.dataframe(ratios.style.format("{:,.2f}"), use_container_width=True, height=380)
     chosen = st.selectbox("Xem biểu đồ tỷ số", list(ratios.index), key="v99_local_ratio_" + symbol)
     series = pd.to_numeric(ratios.loc[chosen], errors="coerce").dropna()

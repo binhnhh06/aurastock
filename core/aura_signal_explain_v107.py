@@ -48,12 +48,12 @@ def render_signal_explanation(xep: dict[str, Any], candidate: dict[str, Any]) ->
     else:
         st.info('**' + info['heading'] + '** — ' + info['explanation'])
     st.caption('“Điểm mua” ở đây là điều kiện nghiên cứu theo EOD, không phải lệnh đặt mua/bán hay dự báo chắc chắn.')
-    with st.expander('Vì sao có / chưa có cơ hội mua? So với tín hiệu X10 cũ', expanded=False):
+    with st.expander('Giải thích điều kiện và kết luận', expanded=False):
         if info['old_label']:
-            st.write('**X10 cũ (tham khảo):**', info['old_label'])
+            st.write('**Kết quả tham khảo:**', info['old_label'])
         st.write('**Bộ xác nhận hiện tại:**', info['new_label'])
         if info['old_label'] and info['old_label'] != info['new_label']:
-            st.caption('Hai bộ lọc có điều kiện khác nhau: nhãn X10 cũ không được dùng để vượt qua bộ xác nhận mới.')
+            st.caption('Kết quả tham khảo không thay thế điều kiện xác nhận hiện tại.')
         if info['observing']:
             st.write('**Thiết lập kỹ thuật đã xuất hiện:**', '; '.join(info['observing']))
         elif info['styles']:

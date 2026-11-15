@@ -415,7 +415,6 @@ with tabs[0]:
                 st.caption("Chưa thỏa setup kỹ thuật cụ thể theo xu hướng, breakout hoặc pullback.")
             for ly_do in ung_vien["ly_do"]:
                 st.caption("• " + ly_do)
-            st.caption("BCTC chưa xác minh chỉ phục vụ nghiên cứu. Tín hiệu MUA/BÁN X10 gốc giữ nguyên.")
         st.subheader("Chỉ số chính")
         st.dataframe({k: [so_vn(v, 2)] for k, v in kq.items()}, hide_index=True, use_container_width=True)
 

@@ -117,7 +117,7 @@ def audit_policy(gia, kq, ty_so, vni, base, *, now=None):
     if valid and last<ma200: risk.append('Giá dưới MA200')
     if dd60 is not None and dd60>=15: risk.append(f'Giảm {dd60:.1f}% so với đỉnh 60 phiên')
     if _num(base.get('diem_tong')) is not None and _num(base.get('diem_tong'))<35:
-        risk.append('Điểm X10 dưới 35')
+        risk.append('Điểm đánh giá dưới 35')
     technical_score=_num(base.get('diem_ta'))
     quality_gate=bool(valid and fresh and not anomalous and liq_ok and market_ok and market_up and not risk)
 
@@ -172,7 +172,7 @@ def audit_policy(gia, kq, ty_so, vni, base, *, now=None):
     x['dk_ban']=[
         ('Giá dưới MA200','Kích hoạt' if 'Giá dưới MA200' in risk else 'Không' if valid else 'N/A','Cảnh báo xu hướng dài hạn'),
         ('Sụt ≥15% từ đỉnh 60 phiên','Kích hoạt' if dd60 is not None and dd60>=15 else 'Không' if dd60 is not None else 'N/A', f'{dd60:.1f}%' if dd60 is not None else 'Chưa tính được'),
-        ('Điểm X10 <35','Kích hoạt' if 'Điểm X10 dưới 35' in risk else 'Không','Chỉ là yếu tố cảnh báo'),
+        ('Điểm đánh giá dưới 35','Kích hoạt' if 'Điểm đánh giá dưới 35' in risk else 'Không','Chỉ là yếu tố cảnh báo'),
     ]
     if not valid or not fresh:
         label='CHỜ DỮ LIỆU'; reasons.insert(0,'Không phát tín hiệu với OHLCV thiếu hoặc cũ')
