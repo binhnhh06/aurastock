@@ -226,9 +226,10 @@ def _sync(root, limit=12, *, pause=0.6):
                 selected = [s for s in PILOT if s in set(usable["symbol"])][:limit]
                 if len(selected) < 3:
                     raise RuntimeError("SSI_CATALOGUE_TOO_SMALL_OR_WRONG_SCHEMA")
-                subset = catalogue.loc[catalogue["symbol"].isin(selected)].copy()
+                # The API returned a full three-board catalogue; retain it all.
+                # Pilot limit bounds OHLCV downloads, not the symbol universe.
                 stage = "SAVE_CATALOGUE"
-                _save_catalogue_portable(subset, root / "data" / "ssi_cache" / "market_symbols.csv")
+                _save_catalogue_portable(catalogue, root / "data" / "ssi_cache" / "market_symbols.csv")
                 stage = "DOWNLOAD_STOCK_BARS"
                 for symbol in selected:
                     try:
@@ -253,6 +254,9 @@ def _sync(root, limit=12, *, pause=0.6):
         return {"status": "OK" if ok else "NO_STOCK_BARS",
                 "source": "SSI FastConnect V3 (temporary cloud cache)",
                 "pilot_symbols": selected, "stock_ok": ok, "index_ok": idx_ok,
+                "universe_equities": int(catalogue.loc[
+                    catalogue["asset_class"].isin(("EQUITY", "EQUITY_CANDIDATE")),
+                    "symbol"].nunique()),
                 "failed": errors}
     except CloudBootstrapError:
         raise
@@ -276,7 +280,7 @@ def bootstrap_cloud():
         d = _read_state()
         interval = 18 * 60 if d.get("status") == "OK" else 60
         if d.get("diag_version") != "9.2.2" or not _fresh(d, interval):
-            d = {"status": "RUNNING", "diag_version": "9.2.2", "attempt_at": datetime.now(TZ).isoformat()}
+            d = {"status": "RUNNING", "diag_version": "9.3.0", "attempt_at": datetime.now(TZ).isoformat()}
             _save_state(d)
             try:
                 limit = max(3, min(30, int(_setting("AURA_CLOUD_PILOT_LIMIT", "12"))))
@@ -303,7 +307,9 @@ def bootstrap_cloud():
                     str(v)[:45] for v in failures[:3]
                 ))
         else:
-            st.sidebar.caption("SSI EOD cloud · bản demo " + str(len(d.get("stock_ok", []))) +
-                               " mã; không phải toàn thị trường hay realtime.")
+            total = d.get("universe_equities", "?")
+            st.sidebar.caption("SSI EOD cloud · " + str(len(d.get("stock_ok", []))) +
+                               " / " + str(total) +
+                               " mã ứng viên có nến giá; bản thí điểm, không realtime.")
     except (ImportError, RuntimeError):
         pass
