@@ -560,7 +560,7 @@ with tabs[3]:
     if r:
         try:
             from core.aura_r2_financial_v98 import render_symbol_annual
-            render_symbol_annual(ROOT, ma)
+            render_symbol_annual(Path(__file__).resolve().parent, ma)
         except (ImportError, RuntimeError, ValueError, TypeError, AttributeError):
             pass
     if not r or not bctc:
