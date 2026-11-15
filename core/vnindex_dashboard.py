@@ -97,6 +97,14 @@ def _eod(root: Path, symbol: str):
              'VN30': ['VN30']}.get(symbol, [symbol])
     path = next((folder / (n + '.csv') for n in names if (folder / (n + '.csv')).is_file()), None)
     recent_rest = _rest_index_cache(root, symbol)
+    # V10.3: separate, private SSI indexSummary snapshots; never infer an index from stocks.
+    try:
+        from core.aura_four_index_private_v103 import read_index_private
+        private = read_index_private(symbol)
+        if private is not None and (recent_rest is None or private["date"] >= recent_rest["date"]):
+            recent_rest = private
+    except (ImportError, RuntimeError, OSError, ValueError, TypeError, KeyError):
+        pass
     if path is None:
         return recent_rest
     try:
@@ -114,7 +122,7 @@ def _eod(root: Path, symbol: str):
                 continue
             records.append((dt, price, item))
         if not records:
-            return None
+            return recent_rest
         records.sort(key=lambda x: x[0])
         d, price, item = records[-1]
         prior = records[-2][1] if len(records) > 1 else None

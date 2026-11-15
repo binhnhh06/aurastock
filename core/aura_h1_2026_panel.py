@@ -40,15 +40,12 @@ def _load(root: Path, as_of: str):
 
 def render_h1_panel(root=None, as_of="2026-11-13"):
     base = Path(root).resolve() if root else Path(__file__).resolve().parents[1]
-    st.markdown("### BCTC bán niên 6T/2026")
-    st.caption("Kỳ 01/01–30/06/2026 · tách biệt BCTC năm 2021–2025; chưa tham gia điểm nghiên cứu hoặc backtest.")
     df, err = _load(base, as_of)
-    if err:
-        st.info(err + " Chỉ bổ sung dữ liệu công bố có ngày và nguồn hợp lệ.")
-        return
-    if df.empty:
-        st.info("Chưa có bản ghi 6T/2026 đáp ứng kỳ, ngày công bố và nguồn trước EOD " + as_of)
-        return
+    if err or df.empty:
+        return  # No official, sourced H1 2026 records: hide entire panel.
+    st.markdown("### BCTC bán niên 6T/2026")
+    st.caption("Kỳ 01/01–30/06/2026; dữ liệu có nguồn và ngày công bố hợp lệ, "
+               "không dùng để chấm điểm hay backtest.")
     st.metric("Mã có dữ liệu bán niên đủ metadata", df["symbol"].nunique())
     cols = [x for x in ["symbol","scope","publication_date","revenue_6m_vnd","net_profit_6m_vnd","revenue_6m_2025_vnd","net_profit_6m_2025_vnd","source_url"] if x in df]
     with st.expander("Xem BCTC 6T/2026 (chưa xác minh độc lập)", expanded=False):

@@ -279,7 +279,7 @@ with st.sidebar:
     ma = st.text_input("Mã cổ phiếu", key="aura_flow_analysis_input").upper().strip()
     so_ngay = st.slider("Khoảng thời gian giá (ngày)", 365, 1825, 730, step=30)
     so_nam = st.slider("Số năm BCTC (báo cáo năm)", min_value=3, max_value=5, value=5, step=1)
-    st.caption("Chọn tối đa 5 năm (2021–2025 nếu nguồn có đủ). Bán niên 2026 là kỳ riêng, không tính vào số năm.")
+    st.caption("Chọn tối đa 5 năm BCTC (2021–2025 nếu nguồn có đủ).")
     st.header("3. BCTC của bạn (tuỳ chọn)")
     st.caption("Không có BCTC tự động? Tải file mẫu, điền số (đơn vị: tỷ đồng) rồi tải lên.")
     st.download_button("Tải file Excel mẫu", mau_excel(), "mau_bctc_cashgo.xlsx", use_container_width=True)
@@ -366,12 +366,8 @@ if r:
     thong_tin = industry.thong_tin(ma)
     ten_nganh = " · ".join(x for x in (thong_tin.get("ten", ""), thong_tin.get("icb2", "")) if x)
     kv = danh_gia(ngu_canh_tu_ket_qua(r), cfg)
-    if not bctc:
-        st.warning("Chưa có BCTC gốc đã xác minh. Mức FA=50 trong X10 là giả định trung tính kỹ thuật, KHÔNG phải điểm cơ bản thực tế. Bảng tỷ số sơ bộ (nếu có) không dùng để chấm điểm.")
-        if LOI:
-            with st.expander("Chi tiết nguồn BCTC tự động chưa sẵn sàng", expanded=False):
-                for k, v in LOI.items():
-                    st.caption(f"⚠ {v}")
+    # V10.3: private R2 financial disclosures are shown inside each financial tab.
+    # Do not render duplicate global warnings below every tab.
 with tabs[0]:
     _dai_thi_truong_vnindex()
     if not r:
