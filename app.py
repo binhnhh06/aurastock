@@ -367,9 +367,11 @@ if r:
     ten_nganh = " · ".join(x for x in (thong_tin.get("ten", ""), thong_tin.get("icb2", "")) if x)
     kv = danh_gia(ngu_canh_tu_ket_qua(r), cfg)
     if not bctc:
-        st.warning("Chưa có dữ liệu báo cáo tài chính. Điểm cơ bản dùng mức trung tính 50 và các tiêu chí cơ bản bị bỏ qua.")
-        for k, v in LOI.items():
-            st.caption(f"⚠ {v}")
+        st.warning("Chưa có BCTC gốc đã xác minh. Mức FA=50 trong X10 là giả định trung tính kỹ thuật, KHÔNG phải điểm cơ bản thực tế. Bảng tỷ số sơ bộ (nếu có) không dùng để chấm điểm.")
+        if LOI:
+            with st.expander("Chi tiết nguồn BCTC tự động chưa sẵn sàng", expanded=False):
+                for k, v in LOI.items():
+                    st.caption(f"⚠ {v}")
 with tabs[0]:
     _dai_thi_truong_vnindex()
     if not r:
@@ -576,8 +578,18 @@ with tabs[3]:
                 st.dataframe(df.style.format("{:,.0f}"), use_container_width=True, height=380)
 
 with tabs[4]:
-    if not r or ty_so.empty:
-        st.info("Chưa tính được tỷ số (thiếu BCTC)." if r else "Bấm **Phân tích** để xem tỷ số tài chính.")
+    # AURA_V982_PROVISIONAL_RATIOS_TAB
+    if not r:
+        st.info("Bấm **Phân tích** để xem tỷ số tài chính.")
+    elif ty_so.empty:
+        # Display only: provisional R2 research, not audited source and not scores.
+        try:
+            from core.aura_financial_ratios_v982 import render_provisional_ratios
+            _candidate_shown = render_provisional_ratios(Path(__file__).resolve().parent, ma)
+        except (ImportError, OSError, RuntimeError, ValueError, TypeError, AttributeError):
+            _candidate_shown = False
+        if not _candidate_shown:
+            st.info("Chưa có tỷ số tài chính đã xác minh hoặc bảng sơ bộ cho mã này.")
     else:
         st.dataframe(ty_so.style.format("{:,.2f}"), use_container_width=True)
         chon = st.selectbox("Xem biểu đồ tỷ số", list(ty_so.index))
