@@ -445,6 +445,13 @@ with tabs[1]:
                     f"<div class='x10-row'>{tag_trang_thai(d['trang_thai'])}<div style='flex:1'><b>{d['nhan']}</b>"
                     f"<div class='x10-small' style='color:#6B6389;opacity:1'>Ngưỡng: {d['nguong']}</div></div>"
                     f"<div style='font-weight:700'>{d['gia_tri']}</div></div>" for d in ds), unsafe_allow_html=True)
+        # AURA_V105_REFERENCE_BCTC: supplementary research display only.
+        if file_bctc is None:
+            try:
+                from core.aura_khauvi_reference_v105 import render_reference_ratios
+                render_reference_ratios(ma, cfg)
+            except (ImportError, RuntimeError, ValueError, TypeError, KeyError, AttributeError):
+                st.caption("Bảng tỷ số BCTC tham khảo chưa sẵn sàng cho mã này.")
         st.subheader("Mã này hợp khẩu vị nào nhất?")
         st.caption("So sánh nhanh với ngưỡng mặc định của từng khẩu vị có sẵn.")
         ctx = ngu_canh_tu_ket_qua(r)

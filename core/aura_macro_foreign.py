@@ -108,7 +108,15 @@ def render_macro_panel(root: Path, symbol: str | None = None):
     st.markdown('### 🌍 Dòng tiền khối ngoại · SSI EOD')
     st.caption('Dữ liệu **mua, bán, mua ròng/bán ròng** theo ngày; khác với giá SSI WebSocket realtime. '
                'Khối ngoại chỉ là yếu tố bối cảnh, không tự tạo tín hiệu MUA.')
+    # AURA_V105_FOREIGN_R2: use private cloud snapshot, then local fallback.
     df = read_foreign(root)
+    try:
+        from core.aura_foreign_r2_v105 import load_foreign_r2
+        cloud_df = load_foreign_r2()
+        if cloud_df is not None and not cloud_df.empty:
+            df = cloud_df
+    except (ImportError, RuntimeError, ValueError, TypeError, AttributeError):
+        pass
     if df.empty:
         st.info('Chưa có snapshot khối ngoại SSI trên máy/Cloud. Chạy scripts/aura_sync_foreign.py để lưu bảng EOD; khi không có dữ liệu AURA để trống thay vì điền 0.')
     else:
