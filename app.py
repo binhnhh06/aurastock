@@ -372,7 +372,17 @@ if r:
         company=thong_tin.get("ten", ""),
     )
     ten_nganh = " · ".join(x for x in (_company_name, _company_sector) if x)
-    kv = danh_gia(ngu_canh_tu_ket_qua(r), cfg)
+    # AURA_V112_SCREEN_CTX: same ratios for headline, rows and comparison.
+    _aura_kv_ctx = ngu_canh_tu_ket_qua(r)
+    _aura_kv_years = {}
+    _aura_kv_added = 0
+    _aura_kv_error = ""
+    if file_bctc is None:
+        from core.aura_suitability_screen_v112 import combine_aura_context
+        _aura_kv_ctx, _aura_kv_years, _aura_kv_added, _aura_kv_error = combine_aura_context(
+            _aura_kv_ctx, ma, kq.get("Giá đóng cửa")
+        )
+    kv = danh_gia(_aura_kv_ctx, cfg)
     # V10.3: private R2 financial disclosures are shown inside each financial tab.
     # Do not render duplicate global warnings below every tab.
 with tabs[0]:
@@ -434,38 +444,41 @@ with tabs[1]:
         st.info("Bấm **Phân tích** trước để xem mã có hợp khẩu vị của bạn không.")
     else:
         st.subheader(f"{ma} và khẩu vị {ten_kv}")
-        st.caption("Điểm ở phần trên sử dụng dữ liệu đã xác minh; xem phần đánh giá sơ bộ BCTC R2 bên dưới khi có dữ liệu.")
+        # AURA_V112_SOURCE_NOTE: one short source label, plus actual missing data.
+        if file_bctc is None:
+            from core.aura_suitability_screen_v112 import missing_financial_criteria
+            if _aura_kv_added:
+                _aura_source_names = sorted(set(
+                    str(x).split(" · ")[-1] for x in _aura_kv_years.values()
+                ))
+                st.caption("Nguồn tỷ số: " + ", ".join(_aura_source_names) +
+                           " · Giá: SSI FastConnect V3. Đánh giá khẩu vị theo bộ ngưỡng hiện có.")
+            _aura_still_missing = missing_financial_criteria(
+                _aura_kv_ctx, cfg, TIEU_CHI
+            )
+            if _aura_still_missing:
+                st.caption("Còn thiếu số liệu để chấm: " + ", ".join(_aura_still_missing) +
+                           ". Không tự điền số liệu giả.")
+            if _aura_kv_error:
+                st.caption("Nguồn bổ sung chưa đọc được: " + _aura_kv_error)
         st.markdown(f"<div class='x10-card' style='background:{kv['mau']}'><b style='font-size:20px'>{kv['hang']}</b><br>"
                     f"{tom_tat(ma, ten_kv, kv)}"
                     f"{thanh_phan_tram(kv['ty_le'] or 0)}</div>", unsafe_allow_html=True)
         if not kv["dong"]:
             st.info("Hãy bật ít nhất một tiêu chí ở thanh bên (mục Tuỳ chỉnh tiêu chí lọc).")
-        # AURA_V109_INLINE_R2: show R2 reference values in the missing suitability rows; official score unchanged.
-        _kv_display_rows = kv["dong"]
-        if file_bctc is None:
-            try:
-                from core.aura_khauvi_inrow_v109 import annotate_rows
-                _kv_display_rows, _ref_count = annotate_rows(
-                    ma, kv["dong"], TIEU_CHI, price_vnd=kq.get("Giá đóng cửa"))
-                if _ref_count:
-                    st.caption(
-                        f"{_ref_count} tiêu chí có số liệu BCTC R2 tham khảo. "
-                        "Các dòng Tham khảo KHÔNG được tính là Đạt hoặc Không đạt "
-                        "và KHÔNG thay đổi % hợp khẩu vị, điểm đánh giá chính thức.")
-            except (ImportError, RuntimeError, ValueError, TypeError, KeyError, AttributeError, IndexError, ZeroDivisionError):
-                st.caption("Tỷ số BCTC R2 tham khảo chưa đọc được cho bảng khẩu vị.")
+        # AURA_V112: rows use the same evaluated suitability context.
         for nhom in NHOM:
-            ds = [d for d in _kv_display_rows if d["nhom"] == nhom]
+            ds = [d for d in kv["dong"] if d["nhom"] == nhom]
             if ds:
                 st.markdown(f"**{nhom}**")
                 st.markdown("".join(
                     f"<div class='x10-row'>{tag_trang_thai(d['trang_thai'])}<div style='flex:1'><b>{d['nhan']}</b>"
                     f"<div class='x10-small' style='color:#6B6389;opacity:1'>Ngưỡng: {d['nguong']}</div></div>"
                     f"<div style='font-weight:700'>{d['gia_tri']}</div></div>" for d in ds), unsafe_allow_html=True)
-        # AURA_V110_SUITABILITY_COMPARISON: display-only, source-aware ranking.
-        from core.aura_suitability_consistency_v110 import render_suitability_comparison
-        render_suitability_comparison(
-            ma, r, KHAU_VI, cau_hinh_khau_vi, danh_gia, ngu_canh_tu_ket_qua
+        # AURA_V112_SUITABILITY_COMPARISON: matches the headline and rows.
+        from core.aura_suitability_screen_v112 import render_profile_table
+        render_profile_table(
+            _aura_kv_ctx, KHAU_VI, cau_hinh_khau_vi, danh_gia
         )
 
 with tabs[2]:
