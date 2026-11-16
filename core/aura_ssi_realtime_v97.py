@@ -90,6 +90,7 @@ class LiveFeed:
         self._worker = None
         self._last_watch = time.monotonic()
         self._error_type = None
+        self._indices = {}
 
     def _connection(self, event):
         state = str(getattr(event, 'state', event)).upper()
@@ -100,6 +101,13 @@ class LiveFeed:
     def _on_data(self, msg):
         # SDK invokes one callback for all market message types. Only trade ticks
         # are eligible to replace the displayed last-matched price.
+        if type(msg).__name__ in ('IndexTickMessage', 'IndexSummaryMessage'):
+            from core.ssi_index_parse import parse_index_message
+            parsed = parse_index_message(msg)
+            if parsed:
+                with self._guard:
+                    self._indices[parsed[0]] = parsed[1]
+            return
         if type(msg).__name__ != 'TradeMessage':
             return
         symbol = str(getattr(msg, 'symbol', '')).strip().upper()
@@ -128,6 +136,21 @@ class LiveFeed:
                 return
             self._worker = threading.Thread(target=self._run, name='AURA-SSI-LIVE', daemon=True)
             self._worker.start()
+
+    def touch(self, now=None):
+        """Dải chỉ số đang được xem: giữ kết nối (trong phiên) để nhận bản tin chỉ số."""
+        now = now or datetime.now(timezone.utc)
+        if session_open(now):
+            with self._guard:
+                self._last_watch = time.monotonic()
+            self._start()
+
+    def index_snapshot(self):
+        """Cùng định dạng snapshot của worker để core/vnindex_dashboard.py dùng lại."""
+        with self._guard:
+            return {'source': 'Streamlit SSI WebSocket', 'indices': {k: dict(v) for k, v in self._indices.items()},
+                    'connection': 'CONNECTED' if self._connected else 'DISCONNECTED',
+                    'worker_at': datetime.now(timezone.utc).isoformat(timespec='seconds')}
 
     def watch(self, symbol, now=None):
         symbol = str(symbol).strip().upper()
@@ -186,7 +209,16 @@ class LiveFeed:
                         ws = stream.streaming
                         ws.on_data = self._on_data
                         ws.on_connection = self._connection
+                        if hasattr(ws, 'on_index_summary'):
+                            ws.on_index_summary = self._on_data
                         ws.connect()
+                        from core.ssi_index_parse import INDEX_CODES
+                        try:
+                            ws.subscribe_index_trade(list(INDEX_CODES))
+                            if hasattr(ws, 'subscribe_index_summary'):
+                                ws.subscribe_index_summary(list(INDEX_CODES))
+                        except (TypeError, ValueError, AttributeError):
+                            pass  # SDK cũ: dải chỉ số dùng EOD
                         with self._guard:
                             self._connected = True
                             self._error_type = None
@@ -258,6 +290,16 @@ try:
 except ImportError:
     def _cached_feed():
         return _create_feed()
+
+
+def live_index_snapshot(now=None, feed=None):
+    """Snapshot chỉ số realtime từ kết nối của app (bản online); {} nếu chưa bật/chưa có."""
+    feed = feed if feed is not None else get_feed()
+    if feed is None:
+        return {}
+    feed.touch(now)
+    snap = feed.index_snapshot()
+    return snap if snap.get('indices') else {}
 
 
 def display_live_quote(symbol, eod_vnd, eod_date=None, *, now=None, feed=None):

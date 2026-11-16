@@ -232,6 +232,13 @@ def market_data(root: Path, *, snapshot=None, clock=None):
             snapshot = {}
     if not isinstance(snapshot, dict):
         snapshot = {}
+    # Bản online: không có worker cùng máy → lấy chỉ số từ kết nối SSI WebSocket của chính app.
+    if not snapshot.get('indices'):
+        try:
+            from core.aura_ssi_realtime_v97 import live_index_snapshot
+            snapshot = live_index_snapshot() or snapshot
+        except (ImportError, OSError, ValueError, RuntimeError, AttributeError):
+            pass
     result = {}
     for symbol, *_ in INDICES:
         eod = _eod(root, symbol)
