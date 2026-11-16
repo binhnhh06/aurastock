@@ -43,12 +43,70 @@ def _from_catalogue(root: Path, cols) -> pd.DataFrame:
     return d[list(cols)]
 
 
+_SSI_CACHE = {'at': 0.0, 'data': None}
+SSI_TTL_SECONDS = 6 * 3600
+
+
+def _from_ssi_api(cols, *, fetch=None, clock=None) -> pd.DataFrame:
+    """Bản online: lấy số CP niêm yết trực tiếp từ SSI Securities (3 lệnh gọi, cache 6 giờ).
+
+    Chỉ chạy khi có khóa SSI trong Streamlit Secrets/biến môi trường. Lỗi → bảng rỗng.
+    """
+    import time
+    clock = clock or time.monotonic
+    if _SSI_CACHE['data'] is not None and clock() - _SSI_CACHE['at'] < SSI_TTL_SECONDS:
+        return _SSI_CACHE['data']
+    out = pd.DataFrame(columns=cols)
+    try:
+        if fetch is None:
+            fetch = _fetch_listed_from_ssi
+        rows = fetch()
+        if rows:
+            out = pd.DataFrame(rows, columns=list(cols))
+    except Exception as exc:  # noqa: BLE001 - không có khóa/mất mạng: để trống, không đoán
+        from core.aura_log import get_logger
+        get_logger('aura.listed').info('Không lấy được CP niêm yết từ SSI: %s', type(exc).__name__)
+    _SSI_CACHE.update(at=clock(), data=out)
+    return out
+
+
+def _fetch_listed_from_ssi():
+    from core.aura_ssi_realtime_v97 import _credentials
+    creds = _credentials()
+    if not creds:
+        return []
+    from ssi_sdk import Auth, Config, Data
+    from ssi_sdk.enums import Board
+    from core.aura_log import SSI_REST_LIMITER
+    observed = _now_vietnam().date().isoformat()
+    rows = []
+    with Auth(Config(client_id=creds[0], api_key=creds[1], api_secret=creds[2])) as auth:
+        auth.authenticate()
+        with Data(auth) as data:
+            for board in (Board.HOSE, Board.HNX, Board.UPCOM):
+                SSI_REST_LIMITER.wait()
+                name = str(getattr(board, 'value', board)).split('.')[-1].upper()
+                for it in data.market_data.get_securities_info_by_board(board) or []:
+                    sym = str(getattr(it, 'symbol', '') or '').strip().upper()
+                    shares = getattr(it, 'listed_shares', None)
+                    if sym and shares:
+                        rows.append({'symbol': sym, 'exchange': name, 'observed_at': observed,
+                                     'source': 'SSI FastConnect V3 · Securities', 'listed_shares': str(shares)})
+    return rows
+
+
 def load_listed_reference(root: Path) -> pd.DataFrame:
-    """Read versioned SSI snapshots; leave invalid rows out; read-only."""
+    """Read versioned SSI snapshots; leave invalid rows out; read-only.
+
+    Thứ tự: file tham chiếu → danh mục SSI có cột listed_shares → gọi SSI trực tiếp (bản online).
+    """
     f = Path(root) / REL
     cols = ('symbol', 'exchange', 'observed_at', 'source', 'listed_shares')
     if not f.is_file():
-        return _from_catalogue(root, cols)
+        cat = _from_catalogue(root, cols)
+        if not cat.empty and pd.to_numeric(cat['listed_shares'], errors='coerce').gt(0).any():
+            return cat
+        return _from_ssi_api(cols)
     try:
         d = pd.read_csv(f, dtype=str, encoding='utf-8-sig', keep_default_na=False)
     except (OSError, ValueError, UnicodeError, pd.errors.ParserError):

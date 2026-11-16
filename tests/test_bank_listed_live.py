@@ -139,3 +139,32 @@ class TestWatchlist(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCPNiemYetTuSSI(unittest.TestCase):
+    def test_goi_ssi_mot_lan_roi_dung_cache(self):
+        import core.aura_ssi_listed_v832 as m
+        m._SSI_CACHE.update(at=0.0, data=None)
+        calls = []
+
+        def fetch():
+            calls.append(1)
+            return [{"symbol": "FPT", "exchange": "HOSE", "observed_at": "2026-11-16",
+                     "source": "SSI FastConnect V3 · Securities", "listed_shares": "1471000000"}]
+        cols = ('symbol', 'exchange', 'observed_at', 'source', 'listed_shares')
+        a = m._from_ssi_api(cols, fetch=fetch, clock=lambda: 100.0)
+        b = m._from_ssi_api(cols, fetch=fetch, clock=lambda: 200.0)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(a.loc[0, "symbol"], "FPT")
+        self.assertIs(a, b)
+        m._SSI_CACHE.update(at=0.0, data=None)
+
+    def test_loi_ssi_tra_bang_rong(self):
+        import core.aura_ssi_listed_v832 as m
+        m._SSI_CACHE.update(at=0.0, data=None)
+
+        def boom():
+            raise ConnectionError("x")
+        cols = ('symbol', 'exchange', 'observed_at', 'source', 'listed_shares')
+        self.assertTrue(m._from_ssi_api(cols, fetch=boom, clock=lambda: 1.0).empty)
+        m._SSI_CACHE.update(at=0.0, data=None)
