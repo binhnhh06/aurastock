@@ -139,6 +139,7 @@ Bộ test dùng dữ liệu tổng hợp, không gọi SSI. Nội dung chính: c
 - **Hiển thị:** máy cá nhân chạy `scripts/ssi_live_worker.py` trong giờ giao dịch (Task Scheduler, xem `scripts/windows/install_live_worker.ps1`). Worker giữ SSI WebSocket, ghi `data/ssi_cache/live_market.json` và đẩy bản sao lên R2 (`<AURA_R2_PREFIX>/live/live_market.json`) mỗi `AURA_LIVE_R2_PUSH_SEC` giây (mặc định 5).
 - Streamlit Cloud đọc snapshot từ R2 bằng khóa chỉ-đọc, cache 5 giây. Snapshot cũ hơn 30 giây hoặc tick cũ hơn 120 giây → thẻ giá ghi rõ “Giá khớp cuối” hoặc quay về “Giá đóng cửa (EOD)”.
 - Worker luôn theo dõi `AURA_LIVE_SYMBOLS` + VN30 + các mã thanh khoản cao nhất (tối đa `AURA_LIVE_MAX`, mặc định 60) và thêm mã người dùng đang xem trên máy chạy worker. Mã ngoài danh sách hiển thị giá EOD.
+- **Lưu trữ WebSocket (bằng chứng ≥ 5–10 phiên):** worker ghi các tick mới mỗi 60 giây vào `data/ssi_cache/live_archive/YYYY-MM-DD.csv` (giờ VN) và sự kiện kết nối vào `..._events.csv`. Tóm tắt: `python scripts/live_archive_summary.py` → `docs/evidence/live_archive_summary.csv`.
 - Chi phí R2: khoảng 4.500 lần ghi/ngày giao dịch, nằm trong hạn mức miễn phí (1 triệu Class A, 10 triệu Class B/tháng).
 
 ### 8.4. Backtest

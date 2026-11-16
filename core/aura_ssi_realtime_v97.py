@@ -37,6 +37,16 @@ def parse_exchange_time(value, received_at):
     s = str(value or '').strip()
     if not s:
         return None
+    # Số: epoch mili-giây / giây, hoặc HHMMSS (vd. 101321).
+    if re.fullmatch(r'\d+(\.\d+)?', s):
+        n = float(s)
+        if n >= 1e12:
+            return datetime.fromtimestamp(n / 1000, timezone.utc).astimezone(VN)
+        if n >= 1e9:
+            return datetime.fromtimestamp(n, timezone.utc).astimezone(VN)
+        if re.fullmatch(r'\d{5,6}', s):
+            s = s.zfill(6)
+            s = f'{s[:2]}:{s[2:4]}:{s[4:]}'
     # ISO timestamps (including explicit offsets).
     try:
         d = datetime.fromisoformat(s.replace('Z', '+00:00'))
@@ -141,6 +151,11 @@ class LiveFeed:
             return {'status': 'NO_TICK' if session_open(now) else 'CLOSED',
                     'price': None, 'connection': 'CONNECTED' if connected else (error_type or 'WAITING')}
         exchange_at, received_at = tick.get('exchange_at'), tick.get('received_at')
+        if exchange_at is None and received_at is not None:
+            # Không đọc được giờ khớp của SSI: dùng thời điểm app nhận tick (đang trong phiên,
+            # đang kết nối, vừa nhận → là giá hiện tại). Được ghi rõ là "Nhận lúc" khi hiển thị.
+            exchange_at = received_at.astimezone(VN)
+            tick['time_source'] = 'received'
         age_received = (now - received_at).total_seconds() if received_at else float('inf')
         age_exchange = (now - exchange_at.astimezone(timezone.utc)).total_seconds() if exchange_at else float('inf')
         valid_date = (exchange_at is not None and exchange_at.astimezone(VN).date() == now.astimezone(VN).date())
@@ -149,6 +164,7 @@ class LiveFeed:
         status = 'LIVE' if fresh else ('LAST' if valid_date else 'OLD')
         return {'status': status, 'price': tick['price'], 'received_at': received_at,
                 'exchange_at': exchange_at, 'quantity': tick.get('quantity'),
+                'time_source': tick.get('time_source', 'exchange'),
                 'connection': 'CONNECTED' if connected else (error_type or 'OFFLINE')}
 
     def _run(self):
@@ -275,5 +291,6 @@ def display_live_quote(symbol, eod_vnd, eod_date=None, *, now=None, feed=None):
     label = 'GIÁ REALTIME SSI' if status == 'LIVE' else 'GIÁ KHỚP GẦN NHẤT SSI'
     displayed_time = exchange_at.astimezone(VN).strftime('%d/%m/%Y %H:%M:%S')
     suffix = ' · Đang trong phiên' if status == 'LIVE' else ' · Chưa xác nhận realtime'
+    prefix = 'Nhận lúc ' if tick.get('time_source') == 'received' else 'Khớp lúc '
     return {'price': price, 'status': 'LIVE_TICK' if status == 'LIVE' else 'LAST_TICK',
-            'label': label, 'detail': 'Khớp lúc ' + displayed_time + suffix}
+            'label': label, 'detail': prefix + displayed_time + suffix}

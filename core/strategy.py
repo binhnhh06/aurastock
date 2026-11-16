@@ -99,7 +99,8 @@ def tinh_diem_x10(gia, kq, ty_so, vni):
         tin_hieu = "THEO DÕI · CẢNH BÁO"
     else:
         tin_hieu = "THEO DÕI"
-    return {"tin_hieu": tin_hieu, "diem_ta": ta, "diem_fa": fa, "diem_tong": tong, "co_fa": co_fa,
+    # Không có BCTC: diem_fa = None (giao diện ghi "chưa có BCTC"), không hiển thị 50 giả định.
+    return {"tin_hieu": tin_hieu, "diem_ta": ta, "diem_fa": fa if co_fa else None, "diem_tong": tong, "co_fa": co_fa,
             "gtgd": gtgd, "dk_mua": mua, "dk_ban": ban}
 
 

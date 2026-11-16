@@ -189,7 +189,8 @@ def _the_tin_hieu_co_gia_live(ma_cp, xep, ten_nganh, gia_dc, ngay_eod):
     time_html = html_escape(bao_gia["detail"])
     diem_tong = float(xep.get("diem_tong", 0))
     diem_ta = float(xep.get("diem_ta", 0))
-    diem_fa = float(xep.get("diem_fa", 0))
+    diem_fa = xep.get("diem_fa")
+    _fa_text = f"Cơ bản {float(diem_fa):.1f}" if diem_fa is not None else "Cơ bản: chưa có BCTC"
     st.markdown(f"""
 <div style="background:linear-gradient(110deg,#6934f5,#c72ee9);border:2.5px solid #21142e;
             border-radius:24px;box-shadow:0 5px 0 #21142e;color:white;
@@ -211,7 +212,7 @@ def _the_tin_hieu_co_gia_live(ma_cp, xep, ten_nganh, gia_dc, ngay_eod):
   <div style="min-width:115px">
     <div style="font-size:11px;font-weight:700">ĐIỂM ĐÁNH GIÁ</div>
     <div style="font-size:27px;font-weight:850">{diem_tong:.0f}<span style="font-size:14px">/100</span></div>
-    <div style="font-size:11px;opacity:.9">Kỹ thuật {diem_ta:.1f} · Cơ bản {diem_fa:.1f}</div>
+    <div style="font-size:11px;opacity:.9">Kỹ thuật {diem_ta:.1f} · {_fa_text}</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -403,7 +404,7 @@ with tabs[0]:
                     f"· khẩu vị {ten_kv}<br>{tom_tat(ma, ten_kv, kv)}</div>", unsafe_allow_html=True)
         c = st.columns(4)
         c[0].metric("Điểm kỹ thuật (80%)", f"{xep['diem_ta']:.1f}")
-        c[1].metric("Điểm cơ bản (20%)", f"{xep['diem_fa']:.1f}")
+        c[1].metric("Điểm cơ bản (20%)", f"{xep['diem_fa']:.1f}" if xep.get('diem_fa') is not None else "Chưa có BCTC")
         c[2].metric("Điểm đánh giá", f"{xep['diem_tong']:.1f}")
         c[3].metric("GTGD 20 phiên", f"{so_vn(xep['gtgd'] / 1e9, 2)} tỷ")
         c1, c2 = st.columns(2)

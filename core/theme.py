@@ -113,7 +113,7 @@ def the_tin_hieu(ma, tin_hieu, diem_tong, diem_ta, diem_fa, gia=None, ten_nganh=
         f'<div class="x10-signal"><div><div class="x10-big">{ma}</div>{nganh}</div>'
         f'<div class="x10-chip" style="background:{mau};font-size:20px">{tin_hieu}</div>{gia_html}'
         f'<div><div class="x10-small">ĐIỂM ĐÁNH GIÁ</div><div class="x10-big">{diem_tong:.0f}<span style="font-size:16px">/100</span></div>'
-        f'<div class="x10-small">Kỹ thuật {diem_ta:.0f} · Cơ bản {diem_fa:.0f}</div></div></div>',
+        f'<div class="x10-small">Kỹ thuật {diem_ta:.0f} · Cơ bản {'chưa có BCTC' if diem_fa is None else f'{diem_fa:.0f}'}</div></div></div>',
         unsafe_allow_html=True)
 
 

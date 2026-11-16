@@ -10,6 +10,7 @@ from __future__ import annotations
 import sys
 import csv
 import json
+import os
 import math
 import threading
 import time
@@ -191,6 +192,25 @@ def main():
         print(f'R2_LIVE: day snapshot len R2 moi {pusher.interval:.0f} giay', flush=True)
     else:
         print('R2_LIVE: tat (thieu AURA_R2_* trong .env) - chi ghi file local', flush=True)
+    # Lưu lịch sử tick theo ngày (bằng chứng thu thập ≥ 5–10 phiên), mỗi ARCHIVE_SEC giây.
+    from core.live_archive import LiveArchive, ARCHIVE_DIR
+    archive = LiveArchive()
+    archive_every = float(os.environ.get('AURA_LIVE_ARCHIVE_SEC', '60') or 60)
+    last_archive = [0.0]
+
+    def archive_tick(force=False):
+        if not force and time.monotonic() - last_archive[0] < archive_every:
+            return
+        last_archive[0] = time.monotonic()
+        with lock:
+            copy = json.loads(json.dumps(state, default=str))
+        try:
+            n = archive.capture(copy)
+            if n:
+                print(f'ARCHIVE: +{n} dong -> {ARCHIVE_DIR.name}/', flush=True)
+        except OSError as exc:
+            print('ARCHIVE_ERROR:', type(exc).__name__, flush=True)
+
     watch = base_watchlist(valid)
     print(f'WATCHLIST_CO_DINH: {len(watch)} ma ({", ".join(watch[:10])}...)', flush=True)
 
@@ -358,6 +378,7 @@ def main():
                     with lock:
                         state['subscribed'] = sorted(subscribed)
                     save(force=True)
+                    archive_tick()
                     ws.wait(timeout_ms=5000)
     except KeyboardInterrupt:
         print('STOPPED')
@@ -372,6 +393,7 @@ def main():
         with lock:
             state['connection'] = 'DISCONNECTED'
         save(force=True)
+        archive_tick(force=True)
         if pusher is not None:
             pusher.stop()
             pusher.run_once()  # báo cho bản online biết worker đã dừng

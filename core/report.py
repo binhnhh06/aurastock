@@ -196,7 +196,7 @@ def xuat_pdf(ma, gia, kq, diem, toi_da, ly_do, kn, bctc, ty_so, xep=None, khau_v
         st.append(Paragraph(ten_nganh, S_NHO))
 
     mau_th = TIN_HIEU_MAU.get(tin_hieu, VANG)
-    dong_phu = (f"Kỹ thuật {so_vn(xep['diem_ta'], 0)} (80%) · Cơ bản {so_vn(xep['diem_fa'], 0)} (20%)" if xep
+    dong_phu = (f"Kỹ thuật {so_vn(xep['diem_ta'], 0)} (80%) · Cơ bản {so_vn(xep['diem_fa'], 0) if xep.get('diem_fa') is not None else 'chưa có BCTC'} (20%)" if xep
                 else f"Đạt {diem}/{toi_da} tiêu chí")
     ket = Table([[Paragraph(f'<font size="20"><b>{tin_hieu}</b></font>', _st("kl", 20, True, alignment=1)),
                   [Paragraph(f'<font size="22"><b>{so_vn(tong, 0)}</b></font><font size="11"> / 100 điểm</font>', _st("d", 22, True)),

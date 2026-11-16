@@ -295,9 +295,15 @@ def _one_card(code, title, board, color, data, today):
     delta = data.get('change')
     delta_class = 'up' if delta is not None and delta > 0 else ('down' if delta is not None and delta < 0 else 'flat')
     breadth = ''
-    adv, dec = data.get('advances'), data.get('declines')
-    if adv is not None and dec is not None:
-        nc = data.get('nochanges')
+    def _count(v):
+        try:
+            f = float(v)
+            return int(f) if f == f and f >= 0 else None
+        except (TypeError, ValueError):
+            return None
+    adv, dec, nc = (_count(data.get(k)) for k in ('advances', 'declines', 'nochanges'))
+    # 0 tăng / 0 giảm nghĩa là nguồn không gửi độ rộng cho chỉ số này → ẩn thay vì hiển thị sai.
+    if adv is not None and dec is not None and (adv + dec + (nc or 0)) > 0:
         breadth = '<div class="aura-idx-breadth">Tăng <b>' + str(adv) + '</b> · Giảm <b>' + str(dec) + '</b>'
         if nc is not None:
             breadth += ' · Đứng <b>' + str(nc) + '</b>'
