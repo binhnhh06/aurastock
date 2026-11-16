@@ -6,10 +6,33 @@ from core.profiles import xay_ngu_canh, danh_gia
 from core import industry
 
 
+def bctc_tu_r2(ma, so_nam):
+    try:
+        from core.aura_original_bctc_v99 import load_original
+        result = load_original(ma)
+    except Exception:  # noqa: BLE001 - không có R2/streamlit: giữ hành vi cũ
+        return {}
+    if not result or not result[0]:
+        return {}
+    out = {}
+    for k, bang in result[0].items():
+        if isinstance(bang, pd.DataFrame) and not bang.empty:
+            cols = sorted(bang.columns)[-int(so_nam):]
+            out[k] = bang[cols]
+    return out
+
+
 def phan_tich_ma(ma, so_ngay, so_nam, vni):
     gia0 = lay_gia(ma, so_ngay)
     # Giữ nguyên nguồn BCTC/ratio hiện tại; đây chưa phải dữ liệu SSI.
     ratio, bctc = lay_ratio(ma), lay_bctc(ma, so_nam)
+    nguon_bctc = "vnfinancialdata / vnstock (nguồn bổ trợ)"
+    if not isinstance(bctc, dict) or len(bctc) < 2:
+        # Bản online không có vnfinancialdata/vnstock: dùng kho BCTC AURA trên R2 (cùng nguồn
+        # với tab Báo cáo tài chính) để điểm cơ bản, P/E, P/B không bị bỏ trống.
+        r2 = bctc_tu_r2(ma, so_nam)
+        if r2:
+            bctc, nguon_bctc = r2, "Kho BCTC AURA (Cloudflare R2) · chưa xác minh ngày công bố"
     ty_so = tinh_ty_so(bctc)
     gia, kq, diem, toi_da, ly_do, kn = phan_tich(gia0, ratio, ty_so)
     xep = danh_gia_x10(gia, kq, ty_so, vni)
@@ -19,7 +42,7 @@ def phan_tich_ma(ma, so_ngay, so_nam, vni):
             "che_do_gia": gia0.attrs.get("che_do", ""),
             "gia_cap_nhat_den": gia0.attrs.get("gia_cap_nhat_den", ""),
             "canh_bao_gia": gia0.attrs.get("canh_bao", ""),
-            "nguon_bctc": "vnfinancialdata / vnstock (nguồn bổ trợ)",
+            "nguon_bctc": nguon_bctc,
             "nguon_vni": (
                 vni.attrs.get("nguon_chi_so", vni.attrs.get("nguon_gia", "SSI FastConnect V3"))
                 if isinstance(vni, pd.DataFrame) and not vni.empty
@@ -54,7 +77,7 @@ def quet_nhieu_ma(danh_sach, so_ngay, so_nam, vni, cau_hinh, tien_do=None):
                 "Nguồn giá": r.get("nguon_gia", ""),
                 "Cập nhật đến": r.get("gia_cap_nhat_den", ""),
                 "Ghi chú": (
-                    "Thiếu chỉ số cơ bản; điểm đánh giá đang dùng 50 điểm cơ bản trung tính"
+                    "Thiếu BCTC; điểm đánh giá chỉ tính phần kỹ thuật"
                     if not r["xep"].get("co_fa", False)
                     else r.get("canh_bao_gia", "")
                 ),

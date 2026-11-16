@@ -167,7 +167,11 @@ def audit_policy(gia, kq, ty_so, vni, base, *, now=None):
         ('Thanh khoản ≥2 tỷ/phiên','Đạt' if liq_ok else 'Không đạt',f'{liquidity/1e9:.2f} tỷ' if liquidity is not None else 'Thiếu GTGD'),
         ('VNINDEX cùng phiên ≥MA50','Đạt' if market_ok and market_up else 'Không đạt' if market_ok else 'N/A',market_note),
         ('Thiết lập theo triết lý','Đạt' if confirmed else 'Theo dõi' if setups else 'Không đạt', ', '.join(confirmed or setups) if confirmed or setups else 'Chưa xuất hiện setup đủ điều kiện'),
-        ('BCTC/định giá có chứng cứ','Đạt' if fa_asof else 'N/A','BCTC sơ bộ hoặc thiếu ngày công bố không được dùng xác nhận Value/CANSLIM đầy đủ'),
+        ('BCTC/định giá có chứng cứ',
+         'Đạt' if fa_asof else ('Tham khảo' if x.get('co_fa') else 'Thiếu BCTC'),
+         'BCTC có ngày công bố đã kiểm chứng' if fa_asof else
+         ('Có BCTC sơ bộ (kho AURA): dùng tham khảo, chưa có ngày công bố kiểm chứng nên không xác nhận Value/CANSLIM'
+          if x.get('co_fa') else 'Chưa có BCTC cho mã này')),
     ]
     x['dk_ban']=[
         ('Giá dưới MA200','Kích hoạt' if 'Giá dưới MA200' in risk else 'Không' if valid else 'N/A','Cảnh báo xu hướng dài hạn'),

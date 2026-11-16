@@ -65,6 +65,23 @@ def tim_doanh_thu(is_):
     return None, None
 
 
+# Dòng vốn góp (để tính số CP và BVPS). Ngân hàng thường ghi "Vốn điều lệ"/"Vốn của tổ chức tín dụng".
+_VON_GOP = ("Cổ phiếu phổ thông", "Vốn góp của chủ sở hữu", "Vốn đầu tư của chủ sở hữu",
+            "Cổ phiếu phổ thông có quyền biểu quyết", "Vốn điều lệ", "Vốn cổ phần",
+            "Vốn của tổ chức tín dụng", "Vốn góp", "Paid-in capital", "Charter capital")
+
+
+def tim_von_gop(bs):
+    dong = lay_dong_chinh_xac(bs, *_VON_GOP)
+    if dong is not None or bs is None or bs.empty:
+        return dong
+    for idx in bs.index:
+        t = str(idx).strip().lower()
+        if any(k in t for k in ("vốn điều lệ", "vốn cổ phần", "vốn góp của chủ sở hữu")) and "thặng dư" not in t:
+            return bs.loc[idx]
+    return None
+
+
 def lay_dong_co_tuc(cf):
     """Dòng cổ tức đã TRẢ trong báo cáo lưu chuyển tiền tệ (không lấy dòng cổ tức nhận được)."""
     if cf is None or cf.empty:
@@ -147,11 +164,15 @@ def tinh_ty_so(bctc):
     eps = lay_dong_chinh_xac(is_, "Lãi cơ bản trên cổ phiếu")
     if eps is None:
         eps = lay_dong(is_, "Lãi cơ bản trên cổ phiếu")
-    von_gop = lay_dong_chinh_xac(bs, "Cổ phiếu phổ thông", "Vốn góp của chủ sở hữu", "Vốn đầu tư của chủ sở hữu")
+    von_gop = tim_von_gop(bs)
     if eps is not None:
         kq["EPS (đồng)"] = eps
     if von_gop is not None and eq is not None:
         kq["BVPS (đồng)"] = eq / (von_gop.where(von_gop > 0) / 10000)  # mệnh giá 10.000 đ/cổ phiếu
+    elif eps is not None and npat is not None and eq is not None:
+        # Không tìm được dòng vốn góp (thường gặp ở BCTC ngân hàng): số CP ≈ LNST / EPS.
+        so_cp = npat / eps.where(eps > 0)
+        kq["BVPS (đồng)"] = eq / so_cp.where(so_cp > 0)
 
     ket_qua = pd.DataFrame(kq).T.sort_index(axis=1)
     # Ghi chú mẫu số của biên LN ròng / tăng trưởng doanh thu để giao diện và báo cáo giải thích được.

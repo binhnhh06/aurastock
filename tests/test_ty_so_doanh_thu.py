@@ -56,3 +56,31 @@ class TestDoanhThu(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBVPSNganHang(unittest.TestCase):
+    def kqkd(self):
+        return bang({"Tổng thu nhập hoạt động": [100, 110, 125], "Lợi nhuận sau thuế": [40, 44, 50],
+                     "Lãi cơ bản trên cổ phiếu": [2000, 2200, 2500]})
+
+    def test_von_dieu_le(self):
+        bs = bang({"TỔNG TÀI SẢN": [1000] * 3, "VỐN CHỦ SỞ HỮU": [400, 450, 500],
+                   "NỢ PHẢI TRẢ": [600] * 3, "Vốn điều lệ": [200, 200, 200]})
+        ts = tinh_ty_so({"balance_sheet": bs, "income_statement": self.kqkd()})
+        self.assertAlmostEqual(float(ts.loc["BVPS (đồng)", 2025]), 500 / (200 / 10000))
+
+    def test_khong_co_von_gop_thi_uoc_tinh_qua_eps(self):
+        bs = bang({"TỔNG TÀI SẢN": [1000] * 3, "VỐN CHỦ SỞ HỮU": [400, 450, 500], "NỢ PHẢI TRẢ": [600] * 3})
+        ts = tinh_ty_so({"balance_sheet": bs, "income_statement": self.kqkd()})
+        so_cp = 50 / 2500
+        self.assertAlmostEqual(float(ts.loc["BVPS (đồng)", 2025]), 500 / so_cp)
+
+
+class TestPipelineR2(unittest.TestCase):
+    def test_dung_bctc_r2_khi_nguon_cu_trong(self):
+        from unittest.mock import patch
+        import core.pipeline as pl
+        stm = bctc({"Doanh thu thuần": [100, 120, 200], "Lợi nhuận sau thuế": [10, 12, 20]})
+        with patch("core.aura_original_bctc_v99.load_original", return_value=(stm, {})):
+            out = pl.bctc_tu_r2("FPT", 2)
+        self.assertEqual(list(out["income_statement"].columns), [2024, 2025])
