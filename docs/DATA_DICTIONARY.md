@@ -56,6 +56,7 @@ Bản ghi có ngày trong tương lai hoặc toàn bộ giá trị trống bị 
 | `vol_ratio` | KL TB 20 phiên / KL TB 60 phiên | điểm thanh khoản |
 | `gtgd20` | TB 20 phiên (close × volume) | lọc thanh khoản ≥ 2 tỷ |
 | `dd60` | (đỉnh 60 phiên − close) / đỉnh | cảnh báo giảm ≥ 15% |
+| Biên LN ròng (%) | LNST / Doanh thu thuần × 100; **ngân hàng**: LNST / Tổng thu nhập hoạt động × 100 (không tính biên gộp) | `core/analysis.py → tim_doanh_thu`, tiêu chí khẩu vị |
 
 ## 6. Nguồn ngoài SSI (bổ trợ, có ghi nhãn)
 

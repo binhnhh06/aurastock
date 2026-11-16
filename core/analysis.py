@@ -33,6 +33,38 @@ def lay_dong_chinh_xac(bang, *ten):
     return None
 
 
+# Tên dòng doanh thu khác nhau theo nguồn dữ liệu (vnfinancialdata, vnstock VCI/TCBS/KBS, VAS).
+_DOANH_THU = ("Doanh số thuần", "Doanh thu thuần",
+              "Doanh thu thuần về bán hàng và cung cấp dịch vụ",
+              "Doanh thu thuần về hoạt động kinh doanh", "Net revenue", "Net sales")
+_LOAI_TRU_DOANH_THU = ("tài chính", "giảm trừ", "nội bộ", "khác", "financial")
+# Ngân hàng không có "doanh thu thuần"; dùng Tổng thu nhập hoạt động (TOI) làm mẫu số.
+_THU_NHAP_NGAN_HANG = ("Tổng thu nhập hoạt động", "Tổng thu nhập hoạt động thuần",
+                       "Total operating income")
+_LAI_GOP = ("Lãi gộp", "Lợi nhuận gộp", "Lợi nhuận gộp về bán hàng và cung cấp dịch vụ", "Gross profit")
+
+
+def tim_doanh_thu(is_):
+    """Trả về (Series doanh thu theo năm, loại) với loại = 'doanh_thu' | 'thu_nhap_hoat_dong' | None.
+
+    Thứ tự: tên chính xác → tên chứa "doanh thu thuần"/"doanh số thuần" (bỏ dòng tài chính,
+    giảm trừ...) → Tổng thu nhập hoạt động của ngân hàng.
+    """
+    if is_ is None or is_.empty:
+        return None, None
+    dong = lay_dong_chinh_xac(is_, *_DOANH_THU)
+    if dong is not None:
+        return dong, "doanh_thu"
+    for idx in is_.index:
+        t = str(idx).strip().lower()
+        if ("doanh thu thuần" in t or "doanh số thuần" in t) and not any(k in t for k in _LOAI_TRU_DOANH_THU):
+            return is_.loc[idx], "doanh_thu"
+    dong = lay_dong_chinh_xac(is_, *_THU_NHAP_NGAN_HANG)
+    if dong is not None:
+        return dong, "thu_nhap_hoat_dong"
+    return None, None
+
+
 def lay_dong_co_tuc(cf):
     """Dòng cổ tức đã TRẢ trong báo cáo lưu chuyển tiền tệ (không lấy dòng cổ tức nhận được)."""
     if cf is None or cf.empty:
@@ -63,8 +95,9 @@ def tinh_ty_so(bctc):
     debt = lay_dong(bs, "NỢ PHẢI TRẢ")
     ca = lay_dong(bs, "TÀI SẢN NGẮN HẠN")
     cl = lay_dong(bs, "Nợ ngắn hạn")
-    rev = lay_dong(is_, "Doanh số thuần")
-    gp = lay_dong(is_, "Lãi gộp")
+    rev, loai_doanh_thu = tim_doanh_thu(is_)
+    # Ngân hàng: không tính biên gộp (không có giá vốn/lãi gộp theo nghĩa doanh nghiệp sản xuất).
+    gp = lay_dong(is_, *_LAI_GOP) if loai_doanh_thu == "doanh_thu" else None
     npat = lay_dong(is_, "Lãi/(lỗ) thuần sau thuế", "Lợi nhuận sau thuế")
 
     kq = {}
@@ -120,7 +153,13 @@ def tinh_ty_so(bctc):
     if von_gop is not None and eq is not None:
         kq["BVPS (đồng)"] = eq / (von_gop.where(von_gop > 0) / 10000)  # mệnh giá 10.000 đ/cổ phiếu
 
-    return pd.DataFrame(kq).T.sort_index(axis=1)
+    ket_qua = pd.DataFrame(kq).T.sort_index(axis=1)
+    # Ghi chú mẫu số của biên LN ròng / tăng trưởng doanh thu để giao diện và báo cáo giải thích được.
+    ket_qua.attrs["mau_so_doanh_thu"] = {
+        "doanh_thu": "Doanh thu thuần",
+        "thu_nhap_hoat_dong": "Tổng thu nhập hoạt động (ngân hàng)",
+    }.get(loai_doanh_thu, "Không tìm thấy")
+    return ket_qua
 
 
 def phan_tich(gia, ratio, ty_so):
