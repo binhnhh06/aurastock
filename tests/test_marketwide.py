@@ -9,7 +9,10 @@ import pandas as pd
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT))
 from core.ssi_universe import classify, save_catalogue, screener_symbols, load_catalogue, validate_symbol
-from scripts.install_marketwide import transform
+try:
+    from scripts.install_marketwide import transform
+except ModuleNotFoundError:  # script cài đặt chỉ có ở bản local
+    transform = None
 from scripts.ssi_fetch_symbol import persist
 
 class TestCatalogue(unittest.TestCase):
@@ -29,11 +32,16 @@ class TestCatalogue(unittest.TestCase):
                              'name':['FPT','VGI','ETF'],'sector':['IT','IT','Fund'],
                              'asset_class':['EQUITY','EQUITY_CANDIDATE','NON_EQUITY'],
                              'equity_scan':[True,True,False]})
-            save_catalogue(df,path/'market_symbols.csv')
+            # save_catalogue từ chối danh mục < 100 mã (chống ghi đè bằng snapshot SSI thiếu)
+            with self.assertRaises(ValueError): save_catalogue(df,path/'market_symbols.csv')
+            filler=pd.DataFrame({'symbol':[f'CW{i:03d}' for i in range(100)],'board':'HOSE',
+                                 'name':'CW','sector':'Fund','asset_class':'NON_EQUITY','equity_scan':False})
+            save_catalogue(pd.concat([df,filler],ignore_index=True),path/'market_symbols.csv')
             self.assertEqual(screener_symbols(td),['FPT','VGI'])
             self.assertEqual(validate_symbol('vgi',td),'VGI')
             with self.assertRaises(ValueError): validate_symbol('../escape',td)
 
+    @unittest.skipIf(transform is None, "Thiếu scripts/install_marketwide.py trong repo")
     def test_installer_no_guess(self):
         a='''def scan_cached_universe(root):\n    universe_file = root / "data" / "ssi_cache" / "vn30_symbols.csv"\n    prices_dir = 1\n    symbols = pd.read_csv(universe_file, encoding="utf-8-sig")["symbol"].dropna().astype(str).str.strip().str.upper().drop_duplicates().tolist()\n    return symbols\n'''
         b,changed=transform(a)

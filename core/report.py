@@ -1,6 +1,7 @@
 import io
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -70,7 +71,7 @@ def _ve_trang(canvas, doc, ma):
         canvas.setFillColor(colors.HexColor(LIME)); canvas.setFont("VN-B", 10)
         canvas.drawString(2 * cm, h - 1.5 * cm, "AURA · BÁO CÁO PHÂN TÍCH CỔ PHIẾU")
         canvas.setFillColor(colors.white); canvas.setFont("VN-B", 34); canvas.drawString(2 * cm, h - 3.1 * cm, ma)
-        canvas.setFont("VN", 10); canvas.drawRightString(w - 2 * cm, h - 1.5 * cm, f"Ngày lập {datetime.now():%d/%m/%Y}")
+        canvas.setFont("VN", 10); canvas.drawRightString(w - 2 * cm, h - 1.5 * cm, f"Ngày lập {datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")):%d/%m/%Y}")
     else:
         canvas.setFillColor(colors.HexColor(TIM)); canvas.rect(0, h - 1.2 * cm, w, 1.2 * cm, stroke=0, fill=1)
         canvas.setFillColor(colors.white); canvas.setFont("VN-B", 10)

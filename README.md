@@ -118,6 +118,23 @@ Mã nguồn công khai chưa chứa kho cache giá EOD, BCTC private, secrets v�
 
 ## 8. Kiểm thử và backtest
 
+### 8.1. Kiểm thử tự động (tái hiện được, không cần API key)
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install pytest
+.\.venv\Scripts\python.exe -m pytest -q tests
+```
+
+Bộ test dùng dữ liệu tổng hợp, không gọi SSI. Nội dung chính: chuẩn hóa OHLCV (giá âm, high/low sai, trùng phiên, thiếu cột), fallback sang cache khi SSI lỗi, chấm điểm X10 (khoảng điểm, không gán điểm cơ bản giả định khi thiếu BCTC, độ mới dữ liệu theo giờ Việt Nam), RSI chấm điểm trùng RSI biểu đồ, giới hạn tần suất REST, danh mục toàn thị trường không bị ghi đè bởi snapshot thiếu.
+
+### 8.2. Nhật ký và giới hạn tần suất
+
+- `core/aura_log.py` ghi log theo giờ Việt Nam ra stderr (Streamlit Cloud → *Manage app → Logs*) và `logs/aura.log` (không commit). Không ghi key/secret/token.
+- Mọi lần gọi SSI REST trong `core/ssi_adapter.py` cách nhau tối thiểu `SSI_MIN_INTERVAL_SEC` giây (mặc định 1). Lỗi API, lần chuyển sang cache và số phiên tải được đều có log.
+- Từ điển dữ liệu và danh sách nhóm API: `docs/DATA_DICTIONARY.md`.
+
+### 8.3. Backtest
+
 **Trạng thái hiện tại:** chưa có báo cáo backtest chính thức. Quy trình dự kiến (chi tiết ở `docs/AURA_BACKTEST_PROTOCOL.md`):
 
 1. Đóng băng phiên bản quy tắc và tập mã nghiên cứu.
@@ -153,6 +170,8 @@ core/                       # SSI adapters, BCTC, chỉ báo, bộ lọc, hiển
 scripts/                    # Đồng bộ dữ liệu và tác vụ kiểm tra
 requirements.txt            # Phụ thuộc Python
 README.md                   # Hướng dẫn dự án
+docs/DATA_DICTIONARY.md     # Nhóm API SSI, trường dữ liệu, kiểm tra chất lượng
+tests/                      # Kiểm thử tự động (pytest)
 ```
 
 **Nguyên tắc phát hành:** Chỉ ghi “hoàn thiện” khi giao diện, tính toàn vẹn dữ liệu, quy trình đồng bộ, kiểm thử hồi quy và backtest đều có log chứng minh. README này là **bản soạn cho lần phát hành**; các trạng thái phải được cập nhật theo log mới nhất trước khi nộp đồ án.

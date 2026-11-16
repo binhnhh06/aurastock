@@ -16,7 +16,8 @@ MAU = {
 def mau_excel(so_nam=4):
     """Trả về bytes file Excel mẫu 3 sheet, cột là các năm gần nhất."""
     from datetime import datetime
-    nam = list(range(datetime.now().year - so_nam, datetime.now().year))
+    from zoneinfo import ZoneInfo
+    nam = list(range(datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).year - so_nam, datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).year))
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as w:
         for k, ten in STATEMENTS.items():

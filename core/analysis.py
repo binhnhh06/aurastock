@@ -127,9 +127,9 @@ def phan_tich(gia, ratio, ty_so):
     gia = gia.copy()
     gia["MA20"] = gia["close"].rolling(20).mean()
     gia["MA50"] = gia["close"].rolling(50).mean()
-    d = gia["close"].diff()
-    rs = d.clip(lower=0).rolling(14).mean() / (-d.clip(upper=0)).rolling(14).mean()
-    gia["RSI"] = 100 - 100 / (1 + rs)
+    # RSI Wilder (1978), dùng CHUNG hàm với biểu đồ kỹ thuật để điểm chấm và đồ thị khớp nhau.
+    from core.technical_chart import _rsi_wilder
+    gia["RSI"] = _rsi_wilder(gia["close"], 14)
     last = gia.iloc[-1]
     n = min(126, len(gia) - 1)
     kq = {

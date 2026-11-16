@@ -1,4 +1,7 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 import pandas as pd
 
 
@@ -40,20 +43,24 @@ def diem_fa(ty_so):
     return float(d), True
 
 
-def danh_gia_x10(gia, kq, ty_so, vni):
+def tinh_diem_x10(gia, kq, ty_so, vni):
+    """Tính điểm kỹ thuật/cơ bản và bảng điều kiện (chưa phân loại tín hiệu cuối cùng)."""
     c = gia["close"]
     last = float(c.iloc[-1])
     ta = diem_ta(gia)
     fa, co_fa = diem_fa(ty_so)
-    tong = round(0.2 * fa + 0.8 * ta, 1)
+    # Không có BCTC thì không gán điểm cơ bản giả định: điểm tổng = điểm kỹ thuật.
+    tong = round(0.2 * fa + 0.8 * ta, 1) if co_fa else round(ta, 1)
 
     px = c * (1000 if last < 1000 else 1)
     gtgd = float((px * gia["volume"]).tail(20).mean()) if "volume" in gia else 0.0
-    moi = (datetime.now() - gia["time"].iloc[-1]).days <= 5
+    # Giờ Việt Nam (server Streamlit Cloud chạy UTC); ngày nến EOD là ngày giao dịch VN.
+    hom_nay = datetime.now(VN_TZ).replace(tzinfo=None)
+    moi = (hom_nay - pd.Timestamp(gia["time"].iloc[-1])).days <= 5
     du = len(gia) >= 200 and moi
 
     mua = [("Điểm thống nhất ≥ 60", "Đạt" if tong >= 60 else "Không đạt",
-            f"{tong:.1f}/100 (kỹ thuật {ta:.1f}, cơ bản {fa:.1f})"),
+            f"{tong:.1f}/100 (kỹ thuật {ta:.1f}, cơ bản {fa:.1f})" if co_fa else f"{tong:.1f}/100 (chỉ kỹ thuật; chưa có BCTC)"),
            ("Dữ liệu đầy đủ, phiên mới nhất", "Đạt" if du else "Không đạt",
             f"{len(gia)} phiên, phiên cuối {gia['time'].iloc[-1]:%d/%m/%Y}"),
            ("GTGD bình quân 20 phiên ≥ 2 tỷ", "Đạt" if gtgd >= 2e9 else "Không đạt",
@@ -101,11 +108,12 @@ def dong_pdf(xep):
     out += ["Cảnh báo rủi ro theo kỹ thuật (không phải lệnh bán):"] + [f"[{t}] {n}: {ct}" for n, t, ct in xep["dk_ban"]]
     return out
 
-# AURA_INVESTMENT_POLICY_V3
-# Preserve TA/FA/X10 numeric scores; replace only decision classification.
-from core.aura_investment_policy import audit_policy as _aura_audit_policy_v3
-_aura_original_x10_v3 = danh_gia_x10
-
 def danh_gia_x10(gia, kq, ty_so, vni):
-    base = _aura_original_x10_v3(gia, kq, ty_so, vni)
-    return _aura_audit_policy_v3(gia, kq, ty_so, vni, base)
+    """Hàm công khai: điểm X10 (tinh_diem_x10) + lớp chính sách phân loại tín hiệu.
+
+    Lớp chính sách (core/aura_investment_policy.py) giữ nguyên các điểm số,
+    chỉ thay nhãn phân loại sau khi kiểm tra độ mới dữ liệu, thanh khoản, VN-Index.
+    """
+    from core.aura_investment_policy import audit_policy
+    base = tinh_diem_x10(gia, kq, ty_so, vni)
+    return audit_policy(gia, kq, ty_so, vni, base)

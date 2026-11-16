@@ -3,6 +3,9 @@ import requests
 import os
 from functools import lru_cache
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 
 # Lỗi gần nhất của từng nguồn dữ liệu, để app hiển thị lý do thay vì im lặng.
 LOI = {}
@@ -54,8 +57,8 @@ NGUON_GIA = ("VCI", "KBS", "TCBS", "MSN")
 def _lay_gia_cu(ma, so_ngay=730):
     """Nguồn cũ chỉ dùng khi được bật fallback có chủ đích."""
     _can_vnstock()
-    end = datetime.now().strftime("%Y-%m-%d")
-    start = (datetime.now() - timedelta(days=so_ngay)).strftime("%Y-%m-%d")
+    end = datetime.now(VN_TZ).strftime("%Y-%m-%d")
+    start = (datetime.now(VN_TZ) - timedelta(days=so_ngay)).strftime("%Y-%m-%d")
     loi = []
     for nguon in NGUON_GIA:
         try:
@@ -160,8 +163,8 @@ def lay_ratio(ma):
 
 def _dnse(ma, loai, so_ngay):
     """Lấy nến ngày từ endpoint biểu đồ công khai của DNSE. loai: 'index' hoặc 'stock'."""
-    den = int(datetime.now().timestamp())
-    tu = int((datetime.now() - timedelta(days=so_ngay)).timestamp())
+    den = int(datetime.now(VN_TZ).timestamp())
+    tu = int((datetime.now(VN_TZ) - timedelta(days=so_ngay)).timestamp())
     r = requests.get(f"https://services.entrade.com.vn/chart-api/v2/ohlcs/{loai}",
                      params={"symbol": ma, "resolution": "1D", "from": tu, "to": den}, timeout=20)
     r.raise_for_status()

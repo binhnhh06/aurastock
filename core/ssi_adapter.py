@@ -8,11 +8,16 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+
+from core.aura_log import SSI_REST_LIMITER, get_logger
+
+log = get_logger("aura.ssi")
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE_DIR = ROOT / "data" / "ssi_cache" / "ohlcv"
@@ -101,6 +106,8 @@ def _fetch_live(symbol, days):
     )
     today = _today()
     since = today - timedelta(days=max(int(days), 400))
+    SSI_REST_LIMITER.wait()  # giới hạn tần suất gọi REST
+    t0 = time.monotonic()
     try:
         with Auth(config) as auth:
             auth.authenticate()
@@ -117,6 +124,7 @@ def _fetch_live(symbol, days):
         # Không in exception body, vì backend/SDK đôi khi chứa chi tiết request.
         status = getattr(exc, "status_code", None)
         code = getattr(exc, "code", None)
+        log.error("SSI DailyOhlc %s thất bại: %s HTTP=%s code=%s", symbol, type(exc).__name__, status, code)
         raise RuntimeError(
             f"SSI Market Data thất bại: {type(exc).__name__}, HTTP={status}, code={code}"
         ) from None
@@ -130,6 +138,8 @@ def _fetch_live(symbol, days):
         "volume": getattr(bar, "volume", None),
     } for bar in (bars or [])]
     df = _normalize(pd.DataFrame(rows), symbol)
+    log.info("SSI DailyOhlc %s: %d phiên, đến %s (%.1fs)", symbol, len(df),
+             df["time"].iloc[-1].date(), time.monotonic() - t0)
     # Lưu cache đúng cấu trúc được dùng trong download_ssi_history.py.
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     csv = CACHE_DIR / f"{symbol}.csv"
@@ -165,6 +175,7 @@ def lay_gia_ssi(symbol, so_ngay=730, refresh=False):
             cached = _normalize(pd.read_csv(csv), symbol)
         except Exception as exc:
             cached_error = type(exc).__name__
+            log.warning("Cache %s không hợp lệ: %s", csv.name, cached_error)
 
     if refresh or cached is None:
         try:
@@ -180,6 +191,8 @@ def lay_gia_ssi(symbol, so_ngay=730, refresh=False):
             full = cached
             mode = "SSI_CACHE"
             warning = "Không cập nhật được SSI, đang dùng dữ liệu cache."
+            log.warning("%s: SSI lỗi (%s), dùng cache đến %s", symbol, type(exc).__name__,
+                        cached["time"].iloc[-1].date())
     else:
         full = cached
         mode = "SSI_CACHE"
