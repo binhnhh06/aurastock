@@ -382,6 +382,8 @@ if r:
         _aura_kv_ctx, _aura_kv_years, _aura_kv_added, _aura_kv_error = combine_aura_context(
             _aura_kv_ctx, ma, kq.get("Giá đóng cửa")
         )
+    from core.profiles import la_ngan_hang
+    _aura_kv_ctx["la_ngan_hang"] = la_ngan_hang(ma, ten_nganh)
     kv = danh_gia(_aura_kv_ctx, cfg)
     # V10.3: private R2 financial disclosures are shown inside each financial tab.
     # Do not render duplicate global warnings below every tab.

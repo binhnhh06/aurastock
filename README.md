@@ -133,7 +133,15 @@ Bộ test dùng dữ liệu tổng hợp, không gọi SSI. Nội dung chính: c
 - Mọi lần gọi SSI REST trong `core/ssi_adapter.py` cách nhau tối thiểu `SSI_MIN_INTERVAL_SEC` giây (mặc định 1). Lỗi API, lần chuyển sang cache và số phiên tải được đều có log.
 - Từ điển dữ liệu và danh sách nhóm API: `docs/DATA_DICTIONARY.md`.
 
-### 8.3. Backtest
+### 8.3. Giá realtime trên bản online (chỉ hiển thị)
+
+- **Tính toán:** MA, RSI, điểm, xếp hạng, backtest luôn dùng nến **SSI EOD**. Giá realtime **không** đi vào bất kỳ phép tính nào.
+- **Hiển thị:** máy cá nhân chạy `scripts/ssi_live_worker.py` trong giờ giao dịch (Task Scheduler, xem `scripts/windows/install_live_worker.ps1`). Worker giữ SSI WebSocket, ghi `data/ssi_cache/live_market.json` và đẩy bản sao lên R2 (`<AURA_R2_PREFIX>/live/live_market.json`) mỗi `AURA_LIVE_R2_PUSH_SEC` giây (mặc định 5).
+- Streamlit Cloud đọc snapshot từ R2 bằng khóa chỉ-đọc, cache 5 giây. Snapshot cũ hơn 30 giây hoặc tick cũ hơn 120 giây → thẻ giá ghi rõ “Giá khớp cuối” hoặc quay về “Giá đóng cửa (EOD)”.
+- Worker luôn theo dõi `AURA_LIVE_SYMBOLS` + VN30 + các mã thanh khoản cao nhất (tối đa `AURA_LIVE_MAX`, mặc định 60) và thêm mã người dùng đang xem trên máy chạy worker. Mã ngoài danh sách hiển thị giá EOD.
+- Chi phí R2: khoảng 4.500 lần ghi/ngày giao dịch, nằm trong hạn mức miễn phí (1 triệu Class A, 10 triệu Class B/tháng).
+
+### 8.4. Backtest
 
 **Trạng thái hiện tại:** chưa có báo cáo backtest chính thức. Quy trình dự kiến (chi tiết ở `docs/AURA_BACKTEST_PROTOCOL.md`):
 

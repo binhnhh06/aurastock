@@ -27,7 +27,7 @@ def _norm_index(value):
 
 
 from core.ssi_market_live import (
-    SNAPSHOT, get_market_symbols, get_credential_config, now_iso,
+    SNAPSHOT, base_watchlist, get_market_symbols, get_credential_config, now_iso,
     read_live_requests, valid_positive, write_snapshot,
 )
 
@@ -153,6 +153,11 @@ def _summary_field(raw, *names):
 
 
 def main():
+    try:  # nạp .env TRƯỚC khi kiểm tra cấu hình R2 (khóa ghi R2 chỉ nằm trên máy cá nhân)
+        from dotenv import load_dotenv
+        load_dotenv(ROOT / '.env', override=False)
+    except ImportError:
+        pass
     from ssi_sdk import Auth, Stream
     from ssi_sdk.models import TradeMessage, IndexTickMessage
     try:
@@ -173,6 +178,21 @@ def main():
         'source': 'SSI FastConnect V3 market WebSocket', 'connection': 'STARTING',
         'worker_at': now_iso(), 'quotes': {}, 'indices': {}, 'subscribed': [],
     }
+
+    # Bản online (Streamlit Cloud) đọc snapshot từ R2; chỉ hiển thị, không tính chỉ báo.
+    pusher = None
+    from core.aura_live_r2 import R2Pusher, enabled as r2_enabled
+    if r2_enabled():
+        def _copy_state():
+            with lock:
+                state['worker_at'] = now_iso()
+                return json.loads(json.dumps(state, default=str))
+        pusher = R2Pusher(_copy_state).start()
+        print(f'R2_LIVE: day snapshot len R2 moi {pusher.interval:.0f} giay', flush=True)
+    else:
+        print('R2_LIVE: tat (thieu AURA_R2_* trong .env) - chi ghi file local', flush=True)
+    watch = base_watchlist(valid)
+    print(f'WATCHLIST_CO_DINH: {len(watch)} ma ({", ".join(watch[:10])}...)', flush=True)
 
     def save(force=False):
         if not force and time.monotonic() - last_write[0] < 0.8:
@@ -325,7 +345,7 @@ def main():
                     state['connection'] = 'CONNECTED'
                 save(force=True)
                 while True:
-                    requested = set(read_live_requests()) & valid
+                    requested = (set(read_live_requests()) | set(watch)) & valid
                     added = sorted(requested - subscribed)
                     removed = sorted(subscribed - requested)
                     if added:
@@ -352,6 +372,9 @@ def main():
         with lock:
             state['connection'] = 'DISCONNECTED'
         save(force=True)
+        if pusher is not None:
+            pusher.stop()
+            pusher.run_once()  # báo cho bản online biết worker đã dừng
 
 
 if __name__ == '__main__':

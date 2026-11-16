@@ -103,6 +103,7 @@ def _save_catalogue_portable(frame, path):
     columns = (
         'symbol', 'board', 'name', 'icb_code', 'sector',
         'stock_type', 'asset_class', 'equity_scan', 'last_trading_date',
+        'listed_shares', 'observed_at',
     )
     required = {'symbol', 'board', 'asset_class'}
     if not isinstance(frame, pd.DataFrame) or frame.empty:

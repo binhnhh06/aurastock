@@ -41,12 +41,46 @@ def valid_positive(value):
         return None
 
 
-def read_snapshot(path=SNAPSHOT):
+def _read_file(path):
     try:
         data = json.loads(Path(path).read_text(encoding='utf-8'))
         return data if isinstance(data, dict) else {}
     except (OSError, ValueError, UnicodeError):
         return {}
+
+
+LOCAL_FRESH_SECONDS = 60
+
+
+def _is_fresh(snapshot, clock=None):
+    beat = parse_time(snapshot.get('worker_at')) if snapshot else None
+    if beat is None:
+        return False
+    age = ((clock or datetime.now(timezone.utc)) - beat).total_seconds()
+    return 0 <= age <= LOCAL_FRESH_SECONDS
+
+
+def read_snapshot(path=SNAPSHOT, *, remote=None):
+    """Snapshot giá realtime (chỉ hiển thị).
+
+    Ưu tiên file do worker cùng máy ghi; nếu không có hoặc đã cũ (bản online trên
+    Streamlit Cloud) thì đọc bản worker đẩy lên R2. Lỗi → {} và giao diện quay về EOD.
+    """
+    local = _read_file(path)
+    if Path(path) != SNAPSHOT or _is_fresh(local):
+        return local
+    try:
+        if remote is None:
+            from core.aura_live_r2 import fetch_snapshot as remote
+        cloud = remote()
+    except (ImportError, OSError, ValueError, RuntimeError):
+        cloud = {}
+    if isinstance(cloud, dict) and cloud and (not local or _is_fresh(cloud) or not _is_fresh(local)):
+        newer_cloud = (parse_time(cloud.get('worker_at')) or datetime.min.replace(tzinfo=timezone.utc)) >= \
+                      (parse_time(local.get('worker_at')) or datetime.min.replace(tzinfo=timezone.utc))
+        if newer_cloud:
+            return cloud
+    return local
 
 
 def write_snapshot(data, path=SNAPSHOT):
@@ -182,3 +216,51 @@ def get_credential_config():
     from ssi_sdk import Config
     return Config(client_id=os.environ['SSI_CLIENT_ID'],
                   api_key=os.environ['SSI_API_KEY'], api_secret=os.environ['SSI_API_SECRET'])
+
+
+def base_watchlist(valid, root=ROOT, *, limit=None, extra=None):
+    """Danh sách mã worker luôn theo dõi để bản online có giá realtime.
+
+    Gồm: AURA_LIVE_SYMBOLS (biến môi trường, phân tách dấu phẩy) → VN30 → các mã
+    thanh khoản cao nhất theo GTGD 20 phiên EOD trong cache. Giới hạn AURA_LIVE_MAX (mặc định 60).
+    Chỉ nhận mã có trong danh mục SSI (`valid`).
+    """
+    import pandas as pd
+    if limit is None:
+        try:
+            limit = int(os.getenv('AURA_LIVE_MAX', '60'))
+        except ValueError:
+            limit = 60
+    limit = max(0, min(limit, 300))
+    valid = {str(v).upper() for v in valid}
+    picked = []
+
+    def add(symbols):
+        for s in symbols:
+            s = str(s).strip().upper()
+            if s in valid and s not in picked and len(picked) < limit:
+                picked.append(s)
+
+    add((extra if extra is not None else os.getenv('AURA_LIVE_SYMBOLS', '')).split(','))
+    vn30 = Path(root) / 'data' / 'ssi_cache' / 'vn30_symbols.csv'
+    if vn30.is_file():
+        try:
+            add(pd.read_csv(vn30, encoding='utf-8-sig')['symbol'].dropna())
+        except (OSError, ValueError, KeyError):
+            pass
+    if len(picked) < limit:
+        liquidity = []
+        for f in (Path(root) / 'data' / 'ssi_cache' / 'ohlcv').glob('*.csv'):
+            sym = f.stem.upper()
+            if sym not in valid or sym in picked:
+                continue
+            try:
+                d = pd.read_csv(f, usecols=['close', 'volume']).tail(20)
+                value = float((pd.to_numeric(d['close'], errors='coerce')
+                               * pd.to_numeric(d['volume'], errors='coerce')).mean())
+            except (OSError, ValueError, KeyError):
+                continue
+            if math.isfinite(value) and value > 0:
+                liquidity.append((value, sym))
+        add(sym for _, sym in sorted(liquidity, reverse=True))
+    return picked

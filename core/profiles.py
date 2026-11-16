@@ -137,6 +137,20 @@ def xay_ngu_canh(gia, kq, ty_so, xep, vni):
     }
 
 
+# Tiêu chí không mang ý nghĩa với ngân hàng: không có giá vốn/lãi gộp, không phân loại
+# tài sản ngắn hạn, đòn bẩy (tiền gửi) và dòng tiền kinh doanh có bản chất khác doanh nghiệp.
+KHONG_AP_DUNG_NGAN_HANG = frozenset({"bien_ln_gop", "no_vcsh", "no_vay_vcsh", "thanh_toan", "cfo_lnst"})
+NGAN_HANG = frozenset({
+    "ABB", "ACB", "BAB", "BID", "BVB", "CTG", "EIB", "HDB", "KLB", "LPB", "MBB", "MSB", "NAB",
+    "NVB", "OCB", "PGB", "SGB", "SHB", "SSB", "STB", "TCB", "TPB", "VAB", "VBB", "VCB", "VIB", "VPB",
+})
+
+
+def la_ngan_hang(ma, nganh=""):
+    """Nhận diện ngân hàng theo danh sách mã niêm yết hoặc tên ngành ICB."""
+    return str(ma).strip().upper() in NGAN_HANG or "ngân hàng" in str(nganh or "").lower()
+
+
 def _co_so(v):
     return v is not None and not (isinstance(v, float) and math.isnan(v))
 
@@ -164,6 +178,10 @@ def danh_gia(ctx, cau_hinh):
         if k not in cau_hinh:
             continue
         nguong, v = cau_hinh[k], ctx.get(k)
+        if ctx.get("la_ngan_hang") and k in KHONG_AP_DUNG_NGAN_HANG:
+            dong.append({"nhom": t["nhom"], "nhan": t["nhan"], "nguong": _text_nguong(t, nguong),
+                         "gia_tri": "Không áp dụng cho ngân hàng", "trang_thai": "Không áp dụng"})
+            continue
         if not _co_so(v):
             tt = "Thiếu dữ liệu"
         elif t["loai"] == "bool":
@@ -178,6 +196,7 @@ def danh_gia(ctx, cau_hinh):
     dat = sum(d["trang_thai"] == "Đạt" for d in dong)
     khong = sum(d["trang_thai"] == "Không đạt" for d in dong)
     thieu = sum(d["trang_thai"] == "Thiếu dữ liệu" for d in dong)
+    khong_ap_dung = sum(d["trang_thai"] == "Không áp dụng" for d in dong)
     ty_le = dat / (dat + khong) * 100 if dat + khong else None
     if ty_le is None:
         hang, mau = "Chưa chọn tiêu chí" if not dong else "Thiếu dữ liệu để kết luận", "#E3E0EE"
@@ -189,7 +208,8 @@ def danh_gia(ctx, cau_hinh):
         hang, mau = "Hợp một phần", "#FFD43B"
     else:
         hang, mau = "Chưa hợp khẩu vị", "#FF8FA3"
-    return {"dong": dong, "dat": dat, "khong": khong, "thieu": thieu, "ty_le": ty_le,
+    return {"dong": dong, "dat": dat, "khong": khong, "thieu": thieu, "khong_ap_dung": khong_ap_dung,
+            "ty_le": ty_le,
             "hang": hang, "mau": mau, "dat_het": bool(dong) and khong == 0 and dat > 0}
 
 

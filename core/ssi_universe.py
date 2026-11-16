@@ -78,6 +78,9 @@ def _board_str(b):
 def collect_market_catalogue(market_data):
     """Returns all returned symbols, with a stock-type classification. No guessed counts."""
     from ssi_sdk.enums import Board
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    observed_at = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().isoformat()
     records = []
     failed = []
     for board in (Board.HOSE, Board.HNX, Board.UPCOM):
@@ -101,6 +104,10 @@ def collect_market_catalogue(market_data):
                 'asset_class': category,
                 'equity_scan': category in ('EQUITY','EQUITY_CANDIDATE'),
                 'last_trading_date': getattr(it,'last_trading_date',None) or '',
+                # Số CP niêm yết SSI tại thời điểm tải (không phải CP lưu hành).
+                'listed_shares': (float(str(getattr(it,'listed_shares','')).replace(',',''))
+                                  if _positive_number(getattr(it,'listed_shares',None)) else ''),
+                'observed_at': observed_at,
             })
     if failed:
         # Partial catalogue is unsafe to advertise as full market.

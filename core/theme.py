@@ -118,7 +118,8 @@ def the_tin_hieu(ma, tin_hieu, diem_tong, diem_ta, diem_fa, gia=None, ten_nganh=
 
 
 _MAU_TRANG_THAI = {"Đạt": MAU["lime"], "Không đạt": "#FF8FA3", "Thiếu dữ liệu": "#E3E0EE",
-                   "Kích hoạt": "#FF8FA3", "Không": MAU["lime"], "N/A": "#E3E0EE"}
+                   "Kích hoạt": "#FF8FA3", "Không": MAU["lime"], "N/A": "#E3E0EE",
+                   "Không áp dụng": "#D6E4F0"}
 
 
 def tag_trang_thai(trang_thai):

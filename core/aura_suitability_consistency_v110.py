@@ -120,7 +120,8 @@ def add_reference_to_context(verified_ctx: Mapping[str, Any], reference: Mapping
 
 
 def one_profile_row(code: str, name: str, profile_cfg: Mapping[str, Any], result: Mapping[str, Any], *, preliminary: bool) -> dict[str, Any]:
-    total = len(profile_cfg)
+    # Tiêu chí "Không áp dụng" (vd. thanh toán hiện hành với ngân hàng) bị loại khỏi mẫu số.
+    total = len(profile_cfg) - int(result.get("khong_ap_dung", 0) or 0)
     passed = int(result.get("dat", 0))
     failed = int(result.get("khong", 0))
     known = passed + failed

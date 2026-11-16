@@ -601,6 +601,10 @@ with tab_screen:
             shown["Vốn hóa (tỷ VND)"] = shown["Vốn hóa (tỷ VND)"].map(
                 lambda x: "Chưa có nguồn" if pd.isna(x) else f"{float(x):,.2f}"
             )
+        if OUT_VALUE in shown.columns:
+            shown[OUT_VALUE] = shown[OUT_VALUE].map(
+                lambda x: "Chưa có" if pd.isna(x) else f"{float(x):,.2f}"
+            )
         display_table(shown, 470)
         # AURA_FLOW_V6: direct screener -> analysis handoff, with an explicit ticker.
         if not good.empty:
