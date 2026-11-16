@@ -142,7 +142,19 @@ Bộ test dùng dữ liệu tổng hợp, không gọi SSI. Nội dung chính: c
 - **Lưu trữ WebSocket (bằng chứng ≥ 5–10 phiên):** worker ghi các tick mới mỗi 60 giây vào `data/ssi_cache/live_archive/YYYY-MM-DD.csv` (giờ VN) và sự kiện kết nối vào `..._events.csv`. Tóm tắt: `python scripts/live_archive_summary.py` → `docs/evidence/live_archive_summary.csv`.
 - Chi phí R2: khoảng 4.500 lần ghi/ngày giao dịch, nằm trong hạn mức miễn phí (1 triệu Class A, 10 triệu Class B/tháng).
 
-### 8.4. Backtest
+### 8.4. Event study (kiểm chứng điểm kỹ thuật)
+
+```powershell
+.\.venv\Scripts\python.exe scripts\aura_backtest_event.py            # toàn bộ mã trong data/ssi_cache/ohlcv
+.\.venv\Scripts\python.exe scripts\aura_backtest_event.py --limit 200 # chạy thử nhanh
+```
+
+- Quy tắc đóng băng theo `core/strategy.py`: điểm kỹ thuật ≥ 60, ≥ 200 phiên, GTGD TB20 ≥ 2 tỷ, VN-Index ≥ MA50 tại đóng cửa phiên t.
+- Vào lệnh giá mở cửa t+1, thoát đóng cửa t+5/t+10/t+20, trừ chi phí khứ hồi 0,40%; lấy mẫu mỗi 5 phiên; 60% thời gian đầu là trong mẫu, phần còn lại ngoài mẫu.
+- So sánh với VN-Index cùng cửa sổ và với toàn bộ mã đủ điều kiện cùng ngày (baseline); t-stat tính trên chuỗi trung bình theo ngày.
+- Kết quả: `docs/evidence/backtest_summary.csv`, `backtest_buckets.csv/.png`. Giới hạn: giá chưa điều chỉnh (loại cửa sổ có biến động 1 ngày > 30%), survivorship bias, cửa sổ 20 phiên chồng lấp, không kiểm định điểm cơ bản vì BCTC chưa có ngày công bố.
+
+### 8.5. Backtest danh mục (chưa thực hiện)
 
 **Trạng thái hiện tại:** chưa có báo cáo backtest chính thức. Quy trình dự kiến (chi tiết ở `docs/AURA_BACKTEST_PROTOCOL.md`):
 
