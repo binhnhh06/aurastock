@@ -36,7 +36,15 @@ bootstrap_cloud()
 from core.aura_cloud_portfolio import is_cloud_demo, session_db
 if is_cloud_demo():
     DB = session_db(st.session_state)
-    st.sidebar.info('Danh mục DEMO riêng theo phiên; không lưu lâu dài sau khi đóng phiên.')
+    st.sidebar.info('Danh mục được lưu RIÊNG trong trình duyệt của máy này (không chia sẻ với người khác). '
+                    'Xóa dữ liệu duyệt web hoặc dùng tab ẩn danh sẽ không còn danh mục.')
+    # AURA_BROWSER_PORTFOLIO: khôi phục (lần đầu) và lưu (khi thay đổi) bằng localStorage.
+    # Mỗi thao tác ghi đều st.rerun(), nên lần chạy kế tiếp sẽ lưu trạng thái mới tại đây.
+    from core.portfolio_browser import sync_with_browser
+    if sync_with_browser(DB, st.session_state) == 'restored':
+        st.rerun()
+    if st.session_state.pop('_aura_pf_error', None):
+        st.warning('Dữ liệu danh mục lưu trong trình duyệt bị lỗi nên đã được bỏ qua.')
 
 
 ap_dung_theme()
@@ -341,6 +349,25 @@ with chart_tab:
                                    file_name='AURA_LaiLo_HangNgay.csv', mime='text/csv')
 
 st.divider()
-st.caption('Danh mục lưu cục bộ tại `data/portfolio/aura_portfolio.sqlite3`. '
+if is_cloud_demo():
+    from core.portfolio_browser import export_state, import_state, to_text
+    with st.expander('Sao lưu / chuyển danh mục sang máy khác'):
+        st.caption('Danh mục chỉ nằm trong trình duyệt của máy này. Tải file để sao lưu, '
+                   'hoặc nhập file trên máy khác để dùng tiếp.')
+        st.download_button('Tải file danh mục (.json)', to_text(export_state(DB)).encode('utf-8'),
+                           file_name='AURA_DanhMuc.json', mime='application/json')
+        _pf_file = st.file_uploader('Nhập file danh mục (.json) — thay thế danh mục hiện tại',
+                                    type=['json'], key='aura_pf_import')
+        if _pf_file is not None and st.button('Nhập danh mục'):
+            try:
+                n = import_state(DB, _pf_file.getvalue().decode('utf-8'))
+                st.success(f'Đã nhập {n} giao dịch.')
+                st.rerun()
+            except (PortfolioInputError, ValueError, UnicodeError) as exc:
+                st.error(f'Không nhập được file: {exc}')
+    st.caption('Bản online: danh mục lưu trong trình duyệt (localStorage) của từng máy, không lưu trên máy chủ, '
+               'không chia sẻ giữa người dùng. Không chứa mật khẩu tài khoản chứng khoán.')
+else:
+    st.caption('Danh mục lưu cục bộ tại `data/portfolio/aura_portfolio.sqlite3`. '
            'Khi sao lưu hoặc chuyển máy, hãy sao lưu file này cùng dự án; không chứa mật khẩu tài khoản chứng khoán. '
            'Dữ liệu không tự đồng bộ qua nhiều thiết bị hoặc lưu ổn định khi triển khai trên hosting không có ổ đĩa bền vững.')
