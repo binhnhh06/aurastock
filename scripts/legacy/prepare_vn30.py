@@ -1,3 +1,7 @@
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 
 import os
 import json
@@ -10,7 +14,7 @@ from dotenv import load_dotenv
 from ssi_sdk import Auth, Config, Data
 from ssi_sdk.enums import Board
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "data" / "ssi_cache"
 OUTPUT.mkdir(parents=True, exist_ok=True)
 

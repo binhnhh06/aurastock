@@ -6,6 +6,10 @@ Run from the *new* batday_ssi_project directory:
 Never modifies stock_analyzer remote or .env; preserves other data.py functions.
 """
 from __future__ import annotations
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 
 import re
 import shutil
@@ -14,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
 DATA_PY = ROOT / "core" / "data.py"
 PIPELINE_PY = ROOT / "core" / "pipeline.py"
 ADAPTER_PY = ROOT / "core" / "ssi_adapter.py"

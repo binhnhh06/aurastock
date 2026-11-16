@@ -1,4 +1,8 @@
 """Check that BatDayStox is reading SSI VNINDEX cache (no trading requests)."""
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 from core.data import lay_vnindex, LOI
 
 print("=== BATDAY SSI V3 - VNINDEX SMOKE TEST ===")

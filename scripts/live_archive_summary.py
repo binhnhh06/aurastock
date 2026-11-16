@@ -15,11 +15,17 @@ from core.live_archive import ARCHIVE_DIR, summarize  # noqa: E402
 
 
 def main():
-    df = summarize(ARCHIVE_DIR)
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--root", default=str(ROOT), help="Thư mục dự án chứa data/ssi_cache/live_archive")
+    ap.add_argument("--out", default=str(ROOT / "docs" / "evidence"))
+    a = ap.parse_args()
+    archive = Path(a.root) / "data" / "ssi_cache" / "live_archive"
+    df = summarize(archive)
     if df.empty:
-        print(f"Chưa có dữ liệu trong {ARCHIVE_DIR}. Hãy chạy scripts/ssi_live_worker.py trong giờ giao dịch.")
+        print(f"Chưa có dữ liệu trong {archive}. Hãy chạy scripts/ssi_live_worker.py trong giờ giao dịch.")
         return 1
-    out = ROOT / "docs" / "evidence" / "live_archive_summary.csv"
+    out = Path(a.out) / "live_archive_summary.csv"
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False, encoding="utf-8-sig")
     print(df.to_string(index=False))

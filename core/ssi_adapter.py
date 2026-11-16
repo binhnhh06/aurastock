@@ -140,7 +140,7 @@ def _fetch_live(symbol, days):
     df = _normalize(pd.DataFrame(rows), symbol)
     log.info("SSI DailyOhlc %s: %d phiên, đến %s (%.1fs)", symbol, len(df),
              df["time"].iloc[-1].date(), time.monotonic() - t0)
-    # Lưu cache đúng cấu trúc được dùng trong download_ssi_history.py.
+    # Lưu cache đúng cấu trúc được dùng trong scripts/legacy/download_ssi_history.py.
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     csv = CACHE_DIR / f"{symbol}.csv"
     temp = csv.with_suffix(".tmp")

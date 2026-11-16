@@ -1,3 +1,7 @@
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 import pandas as pd
 
 src = r"C:\Users\binh1\vn-annual-report-miner\src\arminer\data\fixtures\fiinpro_icb_companies.csv"

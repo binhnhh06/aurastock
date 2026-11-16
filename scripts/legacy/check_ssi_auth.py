@@ -1,3 +1,7 @@
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 
 import os
 from pathlib import Path
@@ -7,7 +11,7 @@ from ssi_sdk import Auth, Config
 from ssi_sdk.exceptions import AuthenticationError, SSIError
 
 # Đọc file .env của dự án
-env_path = Path(__file__).resolve().parent / ".env"
+env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(env_path, override=True)
 
 keys = [

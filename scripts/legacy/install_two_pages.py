@@ -4,6 +4,10 @@ Dry-run: python install_two_pages.py --dry-run
 Apply:   python install_two_pages.py
 """
 from __future__ import annotations
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 
 import argparse
 import ast

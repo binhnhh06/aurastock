@@ -1,9 +1,13 @@
 """Read only audit reports and produce traceable candidate mapping; no scoring."""
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 import argparse
 from pathlib import Path
 from core.financial_mapping_v31 import compile_financial_review
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     parser = argparse.ArgumentParser()

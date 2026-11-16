@@ -188,7 +188,10 @@ Bộ test dùng dữ liệu tổng hợp, không gọi SSI. Nội dung chính: c
 app.py                      # Trang phân tích chính
 pages/                      # Các trang phụ: sàng lọc, danh mục (tùy bản triển khai)
 core/                       # SSI adapters, BCTC, chỉ báo, bộ lọc, hiển thị
-scripts/                    # Đồng bộ dữ liệu và tác vụ kiểm tra
+scripts/                    # Đồng bộ dữ liệu, worker realtime, backtest, kiểm kê
+scripts/windows/            # PowerShell: cài worker theo lịch, runbook nộp bài
+scripts/legacy/             # Script một lần thời phát triển (không dùng trong sản phẩm)
+docs/evidence/              # Bằng chứng kiểm chứng: backtest, tóm tắt dữ liệu WebSocket
 requirements.txt            # Phụ thuộc Python
 README.md                   # Hướng dẫn dự án
 docs/DATA_DICTIONARY.md     # Nhóm API SSI, trường dữ liệu, kiểm tra chất lượng

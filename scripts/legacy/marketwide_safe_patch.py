@@ -3,6 +3,10 @@ Run from project root: python marketwide_safe_patch.py.
 Does NOT modify data files, secrets, scores, or app.py.
 """
 from __future__ import annotations
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 import ast
 import shutil
 from datetime import datetime

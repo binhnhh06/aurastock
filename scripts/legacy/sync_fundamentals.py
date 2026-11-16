@@ -5,6 +5,10 @@ Khong su dung core.data.lay_ratio do ky du lieu khong hop le.
 Khong tao diem dau tu va khong gia dinh ngay cong bo.
 """
 from __future__ import annotations
+import sys as _aura_sys
+from pathlib import Path as _AuraPath
+_aura_sys.path.insert(0, str(_AuraPath(__file__).resolve().parents[2]))  # gốc dự án (file đã chuyển vào scripts/legacy)
+
 
 from datetime import datetime
 from pathlib import Path
@@ -21,7 +25,7 @@ SYMBOLS = (
 )
 STATEMENTS = ("balance_sheet", "income_statement", "cash_flow")
 YEARS = {"2023", "2024", "2025"}
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "data" / "fundamentals" / "staging"
 
 
