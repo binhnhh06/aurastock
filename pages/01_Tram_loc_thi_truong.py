@@ -960,6 +960,21 @@ with tab_data:
                "0,2 × Điểm cơ bản + 0,8 × Điểm kỹ thuật; chỉ tính khi đủ bằng chứng nguồn/ngày "
                "công bố và chỉ tiêu đúng thời điểm. Điểm xếp hạng là công cụ nghiên cứu, không "
                "phải khuyến nghị đầu tư.")
+    st.markdown("**Kết quả kiểm thử (backtest) tín hiệu AURA**")
+    bt_path = ROOT / "docs" / "evidence" / "backtest_portfolio_summary.csv"
+    if bt_path.is_file():
+        try:
+            bt = pd.read_csv(bt_path, encoding="utf-8-sig")
+            display_table(bt, 260)
+            st.caption("Danh mục tín hiệu AURA (equal-weight) so với mua-giữ VN-Index, chia 3 giai đoạn "
+                       "(Trong mẫu / Ngoài mẫu / Toàn bộ). Kết quả ngoài mẫu hiện đang kém hơn VN-Index "
+                       "(CAGR âm, Sharpe âm) — xem chi tiết phương pháp và khuyến nghị tại Mục 7 báo cáo đồ án. "
+                       "Đây là kết quả nghiên cứu lịch sử, không phải khuyến nghị đầu tư hay cam kết lợi nhuận "
+                       "tương lai.")
+        except (OSError, ValueError, pd.errors.ParserError):
+            st.caption("Chưa đọc được file kết quả backtest.")
+    else:
+        st.caption("Chưa có file kết quả backtest (docs/evidence/backtest_portfolio_summary.csv).")
     with st.expander("Danh mục SSI và phân loại chứng khoán"):
         cols = [c for c in ("symbol", "name", "board", "sector", "asset_class") if c in cat]
         st.dataframe(cat[cols], hide_index=True, use_container_width=True, height=340)
