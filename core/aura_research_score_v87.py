@@ -38,11 +38,12 @@ def build_research_table(technical: pd.DataFrame, root: Path, year: int=2025) ->
         t=t.merge(f, how='left',on='Mã',validate='one_to_one')
         t['Nhóm ngành']=t['Nhóm ngành'].fillna('Chưa phân nhóm')
         t['Chỉ tiêu so sánh']=pd.to_numeric(t['Chỉ tiêu so sánh'],errors='coerce').fillna(0).astype(int)
-    # 50% technical + 35% provisional fundamentals, normalized to 100% of AVAILABLE weights.
-    # Not a 50/35/15 Smart Rating because the 15% valuation factor is absent.
+    # Chia đều 50/50 giữa kỹ thuật và cơ bản sơ bộ khi thiếu định giá (naive 1/N diversification,
+    # DeMiguel, Garlappi & Uppal 2009, Review of Financial Studies) — không dùng tỷ lệ 50/35 cũ
+    # vì tỷ lệ đó chưa có nguồn uy tín nào xác nhận là tối ưu.
     both = t['Điểm kỹ thuật /10'].notna() & t['Điểm cơ bản SƠ BỘ /10'].notna()
     t['Điểm nghiên cứu 2 nhóm /10']=np.where(both,
-        (50*t['Điểm kỹ thuật /10']+35*t['Điểm cơ bản SƠ BỘ /10'])/85,
+        (t['Điểm kỹ thuật /10']+t['Điểm cơ bản SƠ BỘ /10'])/2,
         np.nan)
     t['Điểm nghiên cứu 2 nhóm /10']=t['Điểm nghiên cứu 2 nhóm /10'].round(2)
     t['Phạm vi']=np.where(both,'THAM KHẢO · BCTC chưa xác minh',
@@ -59,9 +60,10 @@ def render_research_rating(root:Path, scan_result):
     st.subheader('AURA · Điểm nghiên cứu 2 nhóm')
     st.caption('Dùng dữ liệu có sẵn: điểm kỹ thuật SSI EOD và chỉ tiêu BCTC 2025 SƠ BỘ. '
                'Không cần nhập 93 bộ hồ sơ thủ công để xem bảng tham khảo.')
-    st.info('Công thức điểm NGHIÊN CỨU: (50 × Kỹ thuật + 35 × Cơ bản sơ bộ) / 85. '
+    st.info('Công thức điểm NGHIÊN CỨU: (Kỹ thuật + Cơ bản sơ bộ) / 2 — chia đều, theo nguyên tắc '
+            '"đa dạng hóa ngây thơ" (DeMiguel, Garlappi & Uppal, 2009) khi thiếu dữ liệu định giá đáng tin cậy. '
             'Định giá 15% CHƯA được tính và KHÔNG thay bằng số giả. '
-            'Đây KHÔNG PHẢI Smart Rating 50/35/15 đã kiểm chứng, KHÔNG sử dụng để backtest hoặc phát tín hiệu MUA.')
+            'Đây KHÔNG PHẢI Smart Rating đã kiểm chứng, KHÔNG sử dụng để backtest hoặc phát tín hiệu MUA.')
     if scan_result is None:
         st.info('Vào Bộ lọc thị trường và bấm Quét để xem bảng điểm.')
         return
