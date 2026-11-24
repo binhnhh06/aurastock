@@ -225,7 +225,7 @@ def render_smart_rating_v7(root: Path, scan_result=None) -> None:
                'Không lấy điểm cơ bản X10 40/50/60 mặc định làm điểm BCTC đã kiểm chứng.')
     template = verified_template([])
     with st.expander('Nguồn BCTC, dữ liệu cần bổ sung và quy tắc chấm', expanded=False):
-        st.markdown('**Trọng số dự kiến:** kỹ thuật 50% · cơ bản 35% · định giá 15%. '
+        st.markdown('**Trọng số dự kiến:** kỹ thuật ~33% · cơ bản ~33% · định giá ~34% (chia đều). '
                     'Chỉ tổng hợp nếu đủ cả 3 nhóm. Cùng ngày chốt EOD, không nhìn trước ngày công bố.')
         st.markdown('**Công ty phi ngân hàng:** ROE, ROA, biên lợi nhuận, tăng trưởng EPS, '
                     'nợ/VCSH, khả năng thanh toán; **ngân hàng:** ROE, ROA, NPL và CAR '

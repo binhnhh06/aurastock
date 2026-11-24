@@ -2,6 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 import pandas as pd
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from audit_ratio_periods_v32 import audit_one
 
 class TestRatioAudit(unittest.TestCase):

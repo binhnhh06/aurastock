@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from audit_fundamentals_v3 import audit, normalize
 
 

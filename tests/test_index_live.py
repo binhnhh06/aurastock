@@ -12,7 +12,7 @@ from core.ssi_index_parse import parse_index_message  # noqa: E402
 from core.vnindex_dashboard import market_data  # noqa: E402
 
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
-NOW = datetime(2026, 11, 16, 10, 20, tzinfo=VN).astimezone(timezone.utc)
+NOW = datetime.now(VN).replace(hour=10, minute=20, second=0, microsecond=0).astimezone(timezone.utc)
 
 
 class IndexTickMessage:

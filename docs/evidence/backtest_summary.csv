@@ -1,0 +1,19 @@
+﻿Giai đoạn,Kỳ hạn (phiên),Nhóm,Số sự kiện,Số ngày,LS TB sau phí (%),LS trung vị (%),Tỷ lệ dương (%),Vượt VN-Index TB (%),Tỷ lệ thắng VN-Index (%),t-stat vượt VN-Index (theo ngày)
+Trong mẫu,5,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",4146,44,-0.46,-0.8,42.1,-0.88,35.9,-2.86
+Trong mẫu,5,Toàn bộ mã đủ điều kiện (baseline),18705,68,-0.34,-0.4,43.6,-0.72,37.4,-4.24
+Trong mẫu,10,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",4146,44,0.03,-1.05,42.9,-1.19,36.3,-2.43
+Trong mẫu,10,Toàn bộ mã đủ điều kiện (baseline),18705,68,-0.13,-0.4,45.1,-1.04,37.5,-4.13
+Trong mẫu,20,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",4146,44,-0.03,-2.08,41.8,-2.38,33.1,-3.2
+Trong mẫu,20,Toàn bộ mã đủ điều kiện (baseline),18705,68,0.33,-0.4,46.6,-1.67,36.1,-4.54
+Ngoài mẫu,5,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",1038,26,-1.32,-1.72,38.1,-0.56,42.8,-1.18
+Ngoài mẫu,5,Toàn bộ mã đủ điều kiện (baseline),11195,46,-0.72,-1.0,38.0,-0.78,39.7,-2.7
+Ngoài mẫu,10,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",1038,26,-1.7,-2.44,38.2,-0.52,44.9,-1.16
+Ngoài mẫu,10,Toàn bộ mã đủ điều kiện (baseline),11195,46,-1.0,-1.33,38.8,-1.17,39.5,-2.81
+Ngoài mẫu,20,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",1038,26,-2.92,-4.14,36.2,-0.33,45.0,-0.71
+Ngoài mẫu,20,Toàn bộ mã đủ điều kiện (baseline),11195,46,-1.58,-2.22,37.1,-1.94,38.0,-3.13
+Toàn bộ,5,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",5184,70,-0.63,-0.96,41.3,-0.82,37.3,-2.67
+Toàn bộ,5,Toàn bộ mã đủ điều kiện (baseline),29900,114,-0.48,-0.64,41.5,-0.74,38.2,-4.81
+Toàn bộ,10,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",5184,70,-0.31,-1.28,42.0,-1.05,38.0,-2.29
+Toàn bộ,10,Toàn bộ mã đủ điều kiện (baseline),29900,114,-0.46,-0.82,42.8,-1.09,38.3,-4.82
+Toàn bộ,20,"Tín hiệu AURA (điểm ≥ 80, VN-Index ≥ MA50)",5184,70,-0.61,-2.46,40.7,-1.97,35.5,-2.46
+Toàn bộ,20,Toàn bộ mã đủ điều kiện (baseline),29900,114,-0.39,-1.13,43.1,-1.77,36.8,-5.31

@@ -59,7 +59,7 @@ def tinh_diem_x10(gia, kq, ty_so, vni):
     moi = (hom_nay - pd.Timestamp(gia["time"].iloc[-1])).days <= 5
     du = len(gia) >= 200 and moi
 
-    mua = [("Điểm thống nhất ≥ 60", "Đạt" if tong >= 60 else "Không đạt",
+    mua = [("Điểm thống nhất ≥ 80", "Đạt" if tong >= 80 else "Không đạt",
             f"{tong:.1f}/100 (kỹ thuật {ta:.1f}, cơ bản {fa:.1f})" if co_fa else f"{tong:.1f}/100 (chỉ kỹ thuật; chưa có BCTC)"),
            ("Dữ liệu đầy đủ, phiên mới nhất", "Đạt" if du else "Không đạt",
             f"{len(gia)} phiên, phiên cuối {gia['time'].iloc[-1]:%d/%m/%Y}"),
@@ -93,7 +93,7 @@ def tinh_diem_x10(gia, kq, ty_so, vni):
     passes_required = bool(required) and all(row[1] == "Đạt" for row in required)
     if risk_hits >= 2 or tong < 35:
         tin_hieu = "TRÁNH / RỦI RO CAO"
-    elif risk_hits == 0 and passes_required and tong >= 60 and co_fa and vni is not None:
+    elif risk_hits == 0 and passes_required and tong >= 80 and co_fa and vni is not None:
         tin_hieu = "CÓ THỂ XEM XÉT MUA"
     elif risk_hits:
         tin_hieu = "THEO DÕI · CẢNH BÁO"
