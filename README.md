@@ -15,7 +15,7 @@ Các câu hỏi nghiên cứu chính:
 1. Có thể tích hợp dữ liệu SSI EOD, chỉ số thị trường và BCTC vào cùng một giao diện dễ sử dụng không?
 2. Bộ lọc theo khẩu vị, xu hướng, breakout, pullback và giá trị hỗ trợ phát hiện **ứng viên để nghiên cứu** như thế nào?
 3. Khi dữ liệu tài chính chưa được kiểm chứng, hệ thống có thể **tách tín hiệu kỹ thuật khỏi xác nhận cơ bản** để tránh kết luận quá mức không?
-4. Kết quả chiến lược có bền vững khi xét chi phí, chế độ thị trường và dữ liệu ngoài mẫu không? **Đã backtest (mục 8.4, 8.5): ở mức sự kiện riêng lẻ tín hiệu có hiệu quả dương, nhưng ở cấp danh mục (nối các kỳ tái cân bằng thành equity curve, ngoài mẫu 24/11/2025–15/10/2026) tín hiệu AURA cho Sharpe âm (-1,98) và thua cả VN-Index lẫn baseline — không bền vững ở cấp danh mục trong giai đoạn kiểm thử.**
+4. Kết quả chiến lược có bền vững khi tính đến chi phí giao dịch, biến động thị trường và dữ liệu ngoài mẫu không? **Đã kiểm chứng ở mục 8.4 và 8.5, và câu trả lời là chưa: xét từng lần mua riêng lẻ, tín hiệu cho lời; nhưng khi gộp lại thành một danh mục theo dõi liên tục qua các kỳ (giai đoạn ngoài mẫu 24/11/2025–15/10/2026), danh mục theo tín hiệu AURA lại lỗ nhiều, mức lời không bù được rủi ro đã bỏ ra (Sharpe -1,98), và thua cả VN-Index lẫn danh mục không lọc (baseline) — tức ở quy mô cả danh mục, tín hiệu chưa bền vững trong giai đoạn kiểm thử này.**
 
 ## 2. Chức năng chính
 
