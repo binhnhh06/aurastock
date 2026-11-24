@@ -1,9 +1,9 @@
 # AURA Stock — Hệ thống phân tích và sàng lọc cổ phiếu Việt Nam
 
 > **Đồ án FinTech / nguyên mẫu nghiên cứu học thuật** · SSI FastConnect V3 · Python · Streamlit · Cloudflare R2
-> **Trạng thái:** bản demo đang hoàn thiện kiểm thử; **chưa có kết quả backtest chính thức**; không phải hệ thống tư vấn hoặc đặt lệnh giao dịch.
+> **Trạng thái:** đang hoàn thiện kiểm thử; **đã có backtest** (event study mục 8.4 + danh mục mục 8.5, log tại `docs/evidence/`) — ở cấp danh mục, tín hiệu kỹ thuật AURA **không vượt trội** so với VN-Index/baseline trong giai đoạn kiểm thử; không phải hệ thống tư vấn hoặc đặt lệnh giao dịch.
 
-**Website demo:** https://aura-stock-filter.streamlit.app/
+**Website:** https://aura-stock-filter.streamlit.app/
 **Mã nguồn:** https://github.com/binhnhh06/aurastock
 
 ## 1. Giới thiệu và mục tiêu
@@ -15,7 +15,7 @@ Các câu hỏi nghiên cứu chính:
 1. Có thể tích hợp dữ liệu SSI EOD, chỉ số thị trường và BCTC vào cùng một giao diện dễ sử dụng không?
 2. Bộ lọc theo khẩu vị, xu hướng, breakout, pullback và giá trị hỗ trợ phát hiện **ứng viên để nghiên cứu** như thế nào?
 3. Khi dữ liệu tài chính chưa được kiểm chứng, hệ thống có thể **tách tín hiệu kỹ thuật khỏi xác nhận cơ bản** để tránh kết luận quá mức không?
-4. Kết quả chiến lược có bền vững khi xét chi phí, chế độ thị trường và dữ liệu ngoài mẫu không? (**Sẽ trả lời sau backtest.**)
+4. Kết quả chiến lược có bền vững khi xét chi phí, chế độ thị trường và dữ liệu ngoài mẫu không? **Đã backtest (mục 8.4, 8.5): ở mức sự kiện riêng lẻ tín hiệu có hiệu quả dương, nhưng ở cấp danh mục (nối các kỳ tái cân bằng thành equity curve, ngoài mẫu 24/11/2025–15/10/2026) tín hiệu AURA cho Sharpe âm (-1,98) và thua cả VN-Index lẫn baseline — không bền vững ở cấp danh mục trong giai đoạn kiểm thử.**
 
 ## 2. Chức năng chính
 
@@ -26,7 +26,7 @@ Các câu hỏi nghiên cứu chính:
 | Hợp khẩu vị | Bộ tiêu chí và ngưỡng theo hồ sơ người dùng; phân biệt Đạt / Không đạt / N/A | Có chức năng; cần soát nhất quán điểm dữ liệu |
 | Báo cáo tài chính | Bảng cân đối kế toán, KQKD, lưu chuyển tiền tệ nhiều năm, lọc chỉ tiêu | Đã thấy trên website; chưa xác minh với bản công bố chính thức |
 | Tỷ số tài chính | Các tỷ số tính từ BCTC và đồ thị | Hiển thị dưới dạng **tham khảo** khi nguồn chưa xác minh |
-| Quét thị trường | Sàng lọc các mã theo bộ tiêu chí đang chọn | Có chức năng; hiệu quả chiến lược chưa backtest |
+| Quét thị trường | Sàng lọc các mã theo bộ tiêu chí đang chọn | Có chức năng; đã backtest (mục 8.4–8.5) — hiệu quả dương ở mức sự kiện riêng lẻ, nhưng không vượt trội ở cấp danh mục ngoài mẫu |
 | Vĩ mô & Chính sách | Dữ liệu thị trường/khối ngoại EOD và tin/chính sách có nguồn | Khối ngoại đã đồng bộ lên R2 (hiện chỉ VN30 + 10 phiên gần nhất), chưa chứng minh bao phủ toàn thị trường |
 | Hiểu doanh nghiệp | Hồ sơ, ngành, chỉ tiêu tài chính, bối cảnh và định giá khi đủ đầu vào | Có chức năng; một số trường có thể N/A |
 | Theo dõi danh mục | Lưu danh sách và tính lãi/lỗ mô phỏng theo cấu hình đang có | Cần kiểm thử độ bền lưu trữ và phân tách người dùng trên Cloud |
