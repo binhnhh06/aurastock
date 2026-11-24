@@ -275,13 +275,7 @@ def bootstrap_cloud():
     try:
         from core.aura_r2_financial_v98 import restore_if_configured as _fin_r2_restore
         _fin_r2_result = _fin_r2_restore(ROOT)
-        if _fin_r2_result.get('status') == 'OK':
-            try:
-                import streamlit as _aura_st
-                _aura_st.sidebar.caption('BCTC sơ bộ 2021–2025 · R2 private: '
-                                         + str(_fin_r2_result.get('symbols', 0)) + ' mã; chưa tự chấm điểm.')
-            except (ImportError, RuntimeError, AttributeError):
-                pass
+        # Khôi phục dữ liệu xong là đủ; không hiển thị debug nội bộ ra sidebar người dùng.
     except Exception:
         # Do not reveal credentials or cloud exceptions to the UI.
         pass
@@ -294,14 +288,6 @@ def bootstrap_cloud():
     except Exception as _aura_full_error:
         _aura_full = {"status": "ERROR", "error_type": type(_aura_full_error).__name__}
     if _aura_full.get("status") == "OK" and int(_aura_full.get("count", 0)) >= 100:
-        try:
-            import streamlit as st
-            st.sidebar.caption(
-                "SSI EOD · snapshot private: " + str(_aura_full["count"])
-                + " mã có giá; dữ liệu không phải realtime."
-            )
-        except (ImportError, RuntimeError):
-            pass
         return
     if _setting("AURA_CLOUD_ALLOW_SSI").lower() not in ("1", "true", "yes"):
         return
@@ -337,22 +323,5 @@ def bootstrap_cloud():
             _save_state(d)
         else:
             d = _read_state()
-    try:
-        import streamlit as st
-        if d.get("status") != "OK":
-            stage = str(d.get("error_stage") or d.get("status", "UNKNOWN"))
-            kind = str(d.get("error_type") or d.get("status", "UNKNOWN"))
-            st.sidebar.warning("SSI cloud chưa đồng bộ: " + stage + " / " + kind)
-            failures = d.get("failed", [])
-            if isinstance(failures, list) and failures:
-                # Errors are internally formatted as symbol:type, never exception text.
-                st.sidebar.caption("Mã không có nến: " + ", ".join(
-                    str(v)[:45] for v in failures[:3]
-                ))
-        else:
-            total = d.get("universe_equities", "?")
-            st.sidebar.caption("SSI EOD cloud · " + str(len(d.get("stock_ok", []))) +
-                               " / " + str(total) +
-                               " mã ứng viên có nến giá; bản thí điểm, không realtime.")
-    except (ImportError, RuntimeError):
-        pass
+    # Đường dẫn pilot (dự phòng khi R2 full-market không khả dụng): không in debug ra sidebar.
+    # Trạng thái vẫn được ghi vào state file (d) để chẩn đoán qua log, không hiển thị cho người dùng cuối.
