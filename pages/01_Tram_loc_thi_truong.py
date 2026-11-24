@@ -369,6 +369,8 @@ st.markdown("""<div class="batday-hero">
  <span class="batday-hero-pill">ĐIỂM KỸ THUẬT /10</span>
  <span class="batday-hero-pill">WATCHLIST & SO SÁNH</span></div>
 </div>""", unsafe_allow_html=True)
+st.caption("Điểm kỹ thuật /10 ở trang này là điểm sàng lọc sơ bộ của Trạm lọc, khác thang với "
+           "Điểm đánh giá 0-100 (dùng để ra tín hiệu mua) ở trang Phân tích cổ phiếu.")
 
 cat = catalogue_cached()
 if cat.empty:

@@ -167,12 +167,15 @@ CSS += """
 def _badge_suc_khoe_du_lieu():
     """Nhãn trạng thái hệ thống ở sidebar: chỉ đọc, không gọi API, không bao giờ làm vỡ trang."""
     try:
-        from datetime import datetime
+        from datetime import datetime, time as _time
         from zoneinfo import ZoneInfo
         now_vn = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
+        # Chỉ gọi là "Live" trong giờ giao dịch (T2-T6, 9:00-15:00 VN); ngoài giờ
+        # luôn hiển thị "Ngoài giờ" dù feed vẫn còn kết nối (tránh gây hiểu lầm).
+        trong_phien = now_vn.weekday() < 5 and _time(9, 0) <= now_vn.time() <= _time(15, 0)
         try:
             from core.aura_ssi_realtime_v97 import get_feed
-            ws_on = get_feed() is not None
+            ws_on = trong_phien and get_feed() is not None
         except Exception:
             ws_on = False
         ws_html = (f'<span class="x10-tag" style="background:{MAU["lime"]}">WebSocket: Live</span>'
@@ -182,7 +185,7 @@ def _badge_suc_khoe_du_lieu():
             f'<div class="x10-card" style="padding:9px 13px;margin:0 0 12px;font-size:11.5px;'
             f'line-height:17px;color:#3A3158">'
             f'<b style="color:#1B1233">Trạng thái hệ thống</b><br>'
-            f'SSI EOD · R2: Tham khảo &nbsp;·&nbsp; BCTC: Sơ bộ, chưa xác minh<br>'
+            f'SSI EOD · R2: Đã đồng bộ &nbsp;·&nbsp; BCTC: Sơ bộ, chưa xác minh<br>'
             f'{ws_html} &nbsp;·&nbsp; Giờ VN {now_vn:%H:%M %d/%m}'
             f'</div>', unsafe_allow_html=True)
     except Exception:
