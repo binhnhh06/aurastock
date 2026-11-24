@@ -60,10 +60,7 @@ def render_research_rating(root:Path, scan_result):
     st.subheader('AURA · Điểm nghiên cứu 2 nhóm')
     st.caption('Dùng dữ liệu có sẵn: điểm kỹ thuật SSI EOD và chỉ tiêu BCTC 2025 SƠ BỘ. '
                'Không cần nhập 93 bộ hồ sơ thủ công để xem bảng tham khảo.')
-    st.info('Công thức điểm NGHIÊN CỨU: (Kỹ thuật + Cơ bản sơ bộ) / 2 — chia đều, theo nguyên tắc '
-            '"đa dạng hóa ngây thơ" (DeMiguel, Garlappi & Uppal, 2009) khi thiếu dữ liệu định giá đáng tin cậy. '
-            'Định giá 15% CHƯA được tính và KHÔNG thay bằng số giả. '
-            'Đây KHÔNG PHẢI Smart Rating đã kiểm chứng, KHÔNG sử dụng để backtest hoặc phát tín hiệu MUA.')
+    st.info('Công thức điểm NGHIÊN CỨU: (Kỹ thuật + Cơ bản sơ bộ) / 2.')
     if scan_result is None:
         st.info('Vào Bộ lọc thị trường và bấm Quét để xem bảng điểm.')
         return

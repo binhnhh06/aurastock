@@ -22,18 +22,6 @@ def _num(x):
         return None
 
 
-def _fundamental(ty_so, field):
-    if ty_so is None or getattr(ty_so, 'empty', True) or field not in ty_so.index:
-        return None
-    row = ty_so.loc[field]
-    if isinstance(row, pd.DataFrame):
-        row = row.iloc[-1]
-    if isinstance(row, pd.Series):
-        nonnull = pd.to_numeric(row, errors='coerce').dropna()
-        return _num(nonnull.iloc[-1]) if len(nonnull) else None
-    return _num(row)
-
-
 def _is_uptrend(vni):
     if vni is None or not isinstance(vni, pd.DataFrame) or len(vni) < 50 or 'close' not in vni:
         return None
@@ -135,13 +123,6 @@ def danh_gia_ung_vien(gia, ty_so=None, vni=None, *, gtgd=None, now=None):
     pullback = bool(ma50 > ma200 and last >= ma50 and 0.97 * ma20 <= last <= 1.05 * ma20
                     and 40 <= rsi <= 68 and ret63 > 0)
 
-    # Fundamental/quality: display research setup only. The app's available
-    # accounting ratios are provisional unless corroborated with release dates.
-    roe = _fundamental(ty_so, 'ROE (%)')
-    net_growth = _fundamental(ty_so, 'Tăng trưởng LNST (%)')
-    quality_provisional = bool(roe is not None and net_growth is not None
-                               and roe >= 12 and net_growth > 0)
-
     styles = []
     if trend:
         styles.append('Xu hướng / động lượng')
@@ -149,8 +130,6 @@ def danh_gia_ung_vien(gia, ty_so=None, vni=None, *, gtgd=None, now=None):
         styles.append('Breakout kiểu CANSLIM (chỉ kỹ thuật)')
     if pullback:
         styles.append('Pullback trong xu hướng tăng')
-    if quality_provisional:
-        styles.append('Chất lượng tăng trưởng (BCTC sơ bộ)')
     out['phong_cach'] = styles
 
     risky = last < ma200 or (c.tail(60).max() - last) / c.tail(60).max() >= 0.15
@@ -158,10 +137,6 @@ def danh_gia_ung_vien(gia, ty_so=None, vni=None, *, gtgd=None, now=None):
         out['ly_do'].append('Có cảnh báo xu hướng/rút lui khỏi đỉnh; chưa phù hợp mở vị thế ngắn hạn')
     if not (trend or breakout or pullback):
         out['ly_do'].append('Chưa xuất hiện cấu trúc kỹ thuật theo ba phong cách')
-    if quality_provisional:
-        out['ly_do'].append('BCTC sơ bộ phù hợp một số tiêu chí chất lượng, chưa chứng thực ngày công bố')
-    else:
-        out['ly_do'].append('Chưa đủ dữ liệu để kết luận theo triết lý giá trị/chất lượng')
 
     if not out['du_lieu_moi']:
         out['nhan'] = 'DỮ LIỆU CŨ · CHỜ ĐỒNG BỘ'
@@ -174,8 +149,6 @@ def danh_gia_ung_vien(gia, ty_so=None, vni=None, *, gtgd=None, now=None):
             out['nhan'] = 'ỨNG VIÊN KỸ THUẬT · CẦN THẨM ĐỊNH'
         else:
             out['nhan'] = 'THEO DÕI TÍN HIỆU KỸ THUẬT'
-    elif quality_provisional:
-        out['nhan'] = 'ỨNG VIÊN NGHIÊN CỨU CƠ BẢN'
     else:
         out['nhan'] = 'CHƯA CÓ TÍN HIỆU'
     return out
