@@ -1,7 +1,7 @@
 # AURA Stock — Hệ thống phân tích và sàng lọc cổ phiếu Việt Nam
 
 > **Đồ án FinTech / nguyên mẫu nghiên cứu học thuật** · SSI FastConnect V3 · Python · Streamlit · Cloudflare R2
-> **Trạng thái:** đang hoàn thiện kiểm thử; **đã có backtest** (event study mục 8.4 + danh mục mục 8.5, log tại `docs/evidence/`) — ở cấp danh mục, tín hiệu kỹ thuật AURA **không vượt trội** so với VN-Index/baseline trong giai đoạn kiểm thử; không phải hệ thống tư vấn hoặc đặt lệnh giao dịch.
+> **Trạng thái:** đang hoàn thiện kiểm thử. Tín hiệu kỹ thuật đã được kiểm chứng bằng backtest ở hai cấp độ — event study (mục 8.4) và danh mục (mục 8.5), kết quả chi tiết kèm giới hạn phương pháp trình bày đầy đủ ở mục 8. Đây là công cụ hỗ trợ nghiên cứu, sàng lọc và giải thích dữ liệu — không phải hệ thống khuyến nghị đầu tư hay đặt lệnh giao dịch.
 
 **Website:** https://aura-stock-filter.streamlit.app/
 **Mã nguồn:** https://github.com/binhnhh06/aurastock
