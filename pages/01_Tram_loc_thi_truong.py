@@ -606,6 +606,12 @@ with tab_screen:
                 lambda x: "Chưa có" if pd.isna(x) else f"{float(x):,.2f}"
             )
         display_table(shown, 470)
+        st.download_button(
+            "Tải kết quả lọc (CSV)",
+            shown.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"aura_bo_loc_{datetime.now(TZ):%Y%m%d_%H%M}.csv",
+            mime="text/csv",
+        )
         # AURA_FLOW_V6: direct screener -> analysis handoff, with an explicit ticker.
         if not good.empty:
             st.markdown("**Phân tích chuyên sâu mã đang lọc**")
@@ -948,9 +954,10 @@ with tab_data:
                      "rsi_macd": "RSI/MACD", "risk": "Rủi ro", "breakout": "Vượt đỉnh"}
     display_table(pd.DataFrame([{"Thành phần": factor_labels[k], "Trọng số (%)": 100*v}
                                 for k, v in WEIGHTS.items()]), 270)
-    st.caption("Giả thuyết điểm tổng hợp: kỹ thuật 50%, cơ bản 35%, định giá 15%; "
-               "chỉ tính khi đủ bằng chứng nguồn/ngày công bố và chỉ tiêu đúng thời điểm. "
-               "Điểm xếp hạng là công cụ nghiên cứu, không phải khuyến nghị đầu tư.")
+    st.caption("Điểm đánh giá tổng hợp (dùng trong tín hiệu mua ở trang Phân tích cổ phiếu): "
+               "0,2 × Điểm cơ bản + 0,8 × Điểm kỹ thuật; chỉ tính khi đủ bằng chứng nguồn/ngày "
+               "công bố và chỉ tiêu đúng thời điểm. Điểm xếp hạng là công cụ nghiên cứu, không "
+               "phải khuyến nghị đầu tư.")
     with st.expander("Danh mục SSI và phân loại chứng khoán"):
         cols = [c for c in ("symbol", "name", "board", "sector", "asset_class") if c in cat]
         st.dataframe(cat[cols], hide_index=True, use_container_width=True, height=340)

@@ -407,6 +407,17 @@ with tabs[0]:
         c[1].metric("Điểm cơ bản (20%)", f"{xep['diem_fa']:.1f}" if xep.get('diem_fa') is not None else "Chưa có BCTC")
         c[2].metric("Điểm đánh giá", f"{xep['diem_tong']:.1f}")
         c[3].metric("GTGD 20 phiên", f"{so_vn(xep['gtgd'] / 1e9, 2)} tỷ")
+        with st.expander("Giải thích điểm số & nguồn tham khảo"):
+            st.markdown(
+                "**Công thức:** Điểm đánh giá = 0,2 × Điểm cơ bản + 0,8 × Điểm kỹ thuật "
+                "(hoặc = Điểm kỹ thuật nếu chưa có BCTC).")
+            st.markdown(
+                "**Ngưỡng xem xét mua ≥ 80/100** — theo quy ước của Validea (đơn vị nghiên cứu "
+                "định lượng mô phỏng Warren Buffett, Benjamin Graham, Peter Lynch...: điểm ≥80 "
+                "được gọi là \"có quan tâm\") và Piotroski F-Score (Đại học Stanford, 2000: "
+                "điểm 8–9/9 ≈ 89–100% được coi là cổ phiếu giá trị tốt).")
+            st.caption("Xem đầy đủ cách tính, nguồn trích dẫn và kết quả backtest kiểm chứng "
+                       "tại mục 5.1 và mục 7 của báo cáo đồ án.")
         c1, c2 = st.columns(2)
         with c1:
             st.subheader("Điều kiện để xem xét mua")

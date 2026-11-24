@@ -164,6 +164,31 @@ CSS += """
 """
 
 
+def _badge_suc_khoe_du_lieu():
+    """Nhãn trạng thái hệ thống ở sidebar: chỉ đọc, không gọi API, không bao giờ làm vỡ trang."""
+    try:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        now_vn = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
+        try:
+            from core.aura_ssi_realtime_v97 import get_feed
+            ws_on = get_feed() is not None
+        except Exception:
+            ws_on = False
+        ws_html = (f'<span class="x10-tag" style="background:{MAU["lime"]}">WebSocket: Live</span>'
+                   if ws_on else
+                   f'<span class="x10-tag" style="background:#E3E0EE">WebSocket: Ngoài giờ</span>')
+        st.markdown(
+            f'<div class="x10-card" style="padding:9px 13px;margin:0 0 12px;font-size:11.5px;'
+            f'line-height:17px;color:#3A3158">'
+            f'<b style="color:#1B1233">Trạng thái hệ thống</b><br>'
+            f'SSI EOD · R2: Tham khảo &nbsp;·&nbsp; BCTC: Sơ bộ, chưa xác minh<br>'
+            f'{ws_html} &nbsp;·&nbsp; Giờ VN {now_vn:%H:%M %d/%m}'
+            f'</div>', unsafe_allow_html=True)
+    except Exception:
+        pass
+
+
 def dieu_huong_trang():
     """Replace Streamlit's default 'app' label with consistent Vietnamese links."""
     with st.sidebar:
@@ -171,6 +196,7 @@ def dieu_huong_trang():
             f'<div class="aura-brand-banner" style="margin:4px 7px 18px 0;">'
             f'{banner_html()}</div>',
             unsafe_allow_html=True)
+        _badge_suc_khoe_du_lieu()
         st.markdown('<div class="aura-nav-kicker">KHÁM PHÁ THỊ TRƯỜNG · 3 BƯỚC</div>', unsafe_allow_html=True)
         st.page_link("pages/01_Tram_loc_thi_truong.py",
                      label="01  ·  TRẠM LỌC THỊ TRƯỜNG", use_container_width=True)
