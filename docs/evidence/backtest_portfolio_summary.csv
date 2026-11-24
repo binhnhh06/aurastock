@@ -1,0 +1,10 @@
+﻿Giai đoạn,Chiến lược,Số kỳ,CAGR (%/năm),Biến động năm hóa (%),"Sharpe (năm hóa, rf=0)",Max Drawdown (%),Tỷ lệ kỳ thắng (%),Tổng lợi suất (%)
+Trong mẫu,Danh mục tín hiệu AURA (equal-weight),17,-9.13,18.32,-0.43,11.73,35.3,-12.12
+Trong mẫu,Danh mục baseline (toàn bộ mã đủ điều kiện),17,0.8,20.36,0.14,12.57,64.7,1.08
+Trong mẫu,VN-Index (mua và giữ),17,22.42,17.82,1.23,9.08,64.7,31.38
+Ngoài mẫu,Danh mục tín hiệu AURA (equal-weight),12,-17.19,9.27,-1.98,18.06,16.7,-16.44
+Ngoài mẫu,Danh mục baseline (toàn bộ mã đủ điều kiện),12,-19.86,12.63,-1.68,21.21,41.7,-19.01
+Ngoài mẫu,VN-Index (mua và giữ),12,0.43,23.22,0.13,12.52,50.0,0.41
+Toàn bộ,Danh mục tín hiệu AURA (equal-weight),29,-12.55,15.09,-0.81,22.87,27.6,-26.56
+Toàn bộ,Danh mục baseline (toàn bộ mã đủ điều kiện),29,-8.33,17.64,-0.4,25.38,55.2,-18.14
+Toàn bộ,VN-Index (mua và giữ),29,12.79,20.01,0.7,12.52,58.6,31.92

@@ -21,13 +21,13 @@ Các câu hỏi nghiên cứu chính:
 
 | Nhóm | Mô tả | Trạng thái xác minh |
 |---|---|---|
-| Toàn cảnh thị trường | VN-Index, VN30, HNX-Index, UPCoM-Index: điểm, biến động, KLGD, GTGD, ngày phiên | Đã có bản tin SSI EOD trên R2; cần giám sát cập nhật hằng phiên |
+| Toàn cảnh thị trường | VN-Index, VN30, HNX-Index, UPCoM-Index: điểm, biến động, KLGD, GTGD, ngày phiên | Đã có bản tin SSI EOD trên R2, có lịch tự động cập nhật hằng ngày (mục 7); mới triển khai 24/11/2026, chưa qua nhiều phiên để xác nhận ổn định |
 | Phân tích cổ phiếu | Giá SSI EOD, các đường MA, RSI, đồ thị đa khung | Đã hiển thị; cần rà soát giá điều chỉnh/corporate actions |
 | Hợp khẩu vị | Bộ tiêu chí và ngưỡng theo hồ sơ người dùng; phân biệt Đạt / Không đạt / N/A | Có chức năng; cần soát nhất quán điểm dữ liệu |
 | Báo cáo tài chính | Bảng cân đối kế toán, KQKD, lưu chuyển tiền tệ nhiều năm, lọc chỉ tiêu | Đã thấy trên website; chưa xác minh với bản công bố chính thức |
 | Tỷ số tài chính | Các tỷ số tính từ BCTC và đồ thị | Hiển thị dưới dạng **tham khảo** khi nguồn chưa xác minh |
 | Quét thị trường | Sàng lọc các mã theo bộ tiêu chí đang chọn | Có chức năng; hiệu quả chiến lược chưa backtest |
-| Vĩ mô & Chính sách | Dữ liệu thị trường/khối ngoại EOD và tin/chính sách có nguồn | Khối ngoại đã đồng bộ lên R2, chưa chứng minh bao phủ toàn thị trường |
+| Vĩ mô & Chính sách | Dữ liệu thị trường/khối ngoại EOD và tin/chính sách có nguồn | Khối ngoại đã đồng bộ lên R2 (hiện chỉ VN30 + 10 phiên gần nhất), chưa chứng minh bao phủ toàn thị trường |
 | Hiểu doanh nghiệp | Hồ sơ, ngành, chỉ tiêu tài chính, bối cảnh và định giá khi đủ đầu vào | Có chức năng; một số trường có thể N/A |
 | Theo dõi danh mục | Lưu danh sách và tính lãi/lỗ mô phỏng theo cấu hình đang có | Cần kiểm thử độ bền lưu trữ và phân tách người dùng trên Cloud |
 
@@ -111,10 +111,13 @@ Mã nguồn công khai chưa chứa kho cache giá EOD, BCTC private, secrets v�
 ## 7. Đồng bộ dữ liệu và triển khai Cloud
 
 - **Dữ liệu giá / chỉ số / khối ngoại:** chạy các script SSI theo cấu hình đã được kiểm tra; xác minh số bản tin, ngày phiên, đơn vị, tỷ lệ lỗi, sau đó mới upload ảnh chụp R2 private.
+  - **4 chỉ số** (VN-Index, VN30, HNX-Index, UPCoM-Index): `scripts/ssi_refresh_indices.py` (lấy EOD qua REST `indexSummary`) → `scripts/aura_upload_index_summary.py` (đẩy lên R2, key `index_summary/v103/{MÃ}.json`).
+  - **Toàn bộ mã cổ phiếu** (OHLCV, ~1.560 mã): `scripts/aura_fullmarket_snapshot.py sync --mode stale` → `scripts/aura_fullmarket_snapshot.py upload` (đóng gói snapshot zip, đẩy lên R2). Có cơ chế tự chặn upload nếu số mã có dữ liệu giảm bất thường so với bản đang có trên R2, để tránh vô tình làm mất dữ liệu; trường hợp giảm hợp lệ (ví dụ 1 mã hủy niêm yết) xử lý thủ công qua `scripts/aura_force_upload_snapshot.py` sau khi xác minh.
+  - **Khối ngoại:** `scripts/aura_sync_foreign.py --days 10 --vn30` → `scripts/aura_upload_foreign_flow.py` (đẩy lên R2, key `foreign_flow/v1/foreign_flow_eod.csv`). Hiện chỉ đồng bộ rổ VN30, chưa phủ toàn thị trường.
 - **BCTC:** chỉ đẩy dữ liệu có quyền lưu trữ và hiển thị, giữ metadata nguồn và trạng thái kiểm chứng.
 - **Website:** Streamlit Community Cloud từ repo `binhnhh06/aurastock`, nhánh `main`, entrypoint `app.py`.
-- **Secrets:** đặt trong **Streamlit Cloud → App settings → Secrets**, không thêm vào GitHub. Đồng nhất endpoint, bucket, prefix, quyền R2 với bộ upload local.
-- **Lịch tự động EOD:** chưa xác nhận đã được triển khai và giám sát; chỉ ghi “tự động cập nhật” sau khi có job, retry, log và kiểm thử sau lỗi.
+- **Secrets:** đặt trong **Streamlit Cloud → App settings → Secrets**, không thêm vào GitHub. Đồng nhất endpoint, bucket, prefix, quyền R2 với bộ upload local. Khóa trong Streamlit Cloud Secrets là **khóa chỉ-đọc** (chỉ để app hiển thị); các script upload ở trên chạy trên máy cá nhân cần một khóa R2 **Read & Write** riêng, không dùng chung với khóa chỉ-đọc.
+- **Lịch tự động EOD:** đã cài qua Windows Task Scheduler — `scripts/windows/install_eod_refresh.ps1`, chạy đủ cả 3 pipeline ở trên (4 chỉ số + toàn bộ mã + khối ngoại), vào 21:00 các ngày thứ 2–6, log tại `logs/eod_full_refresh.log`. **Cài đặt và chạy thử lần đầu ngày 24/11/2026; mới xác nhận chạy đúng 1 lần, chưa có chuỗi log nhiều ngày liên tục để coi là đã kiểm thử ổn định** — phụ thuộc máy cá nhân phải đang bật đúng giờ đã đặt lịch; chưa có cơ chế cảnh báo khi lịch không chạy được (ví dụ máy tắt/ngủ).
 
 ## 8. Kiểm thử và backtest
 
@@ -154,16 +157,25 @@ Bộ test dùng dữ liệu tổng hợp, không gọi SSI. Nội dung chính: c
 - So sánh với VN-Index cùng cửa sổ và với toàn bộ mã đủ điều kiện cùng ngày (baseline); t-stat tính trên chuỗi trung bình theo ngày.
 - Kết quả: `docs/evidence/backtest_summary.csv`, `backtest_buckets.csv/.png`. Giới hạn: giá chưa điều chỉnh (loại cửa sổ có biến động 1 ngày > 30%), survivorship bias, cửa sổ 20 phiên chồng lấp, không kiểm định điểm cơ bản vì BCTC chưa có ngày công bố.
 
-### 8.5. Backtest danh mục (chưa thực hiện)
+### 8.5. Backtest danh mục (đã thực hiện — 24/11/2026)
 
-**Trạng thái hiện tại:** chưa có báo cáo backtest chính thức. Quy trình dự kiến (chi tiết ở `docs/AURA_BACKTEST_PROTOCOL.md`):
+Khác với event study ở mục 8.4 (đo lợi suất trung bình của TỪNG sự kiện riêng lẻ, không nối theo thời gian), mục này dựng DANH MỤC và nối các kỳ tái cân bằng liên tiếp **không chồng lấp** thành một đường equity curve, để tính các thước đo chuẩn của quản lý danh mục.
 
-1. Đóng băng phiên bản quy tắc và tập mã nghiên cứu.
-2. Làm sạch dữ liệu OHLCV, kiểm tra đơn vị và quyền/cổ tức; ghi nhận mã hủy niêm yết để hạn chế survivorship bias.
-3. Phát tín hiệu tại **đóng cửa ngày t**, mô phỏng khớp **không sớm hơn ngày t+1**; ghi chi phí, thuế, trượt giá và điều kiện thanh khoản.
-4. So sánh chiến lược theo phong cách (xu hướng, breakout, pullback) với mua–nắm giữ, VN-Index, và thử ngoài mẫu / walk-forward.
-5. Báo cáo CAGR, lợi nhuận tổng, biến động, Sharpe (giả định lãi suất phi rủi ro rõ ràng), max drawdown, số lệnh, tỷ lệ thắng và kiểm tra nhạy cảm tham số.
-6. Chỉ đưa kết quả lên README khi đã chạy và kiểm tra dữ liệu thực tế; **không tự điền tỷ lệ thắng hoặc hiệu suất**.
+- Quy tắc: tái cân bằng mỗi 20 phiên (~1 tháng), equal-weight, đã trừ chi phí khứ hồi 0,40%. 3 danh mục so sánh: (1) **Tín hiệu AURA** — chỉ giữ mã đạt điểm ≥ 60 tại đầu kỳ; không có mã nào đạt tín hiệu thì coi như giữ tiền mặt (lợi suất kỳ = 0%); (2) **Baseline** — equal-weight toàn bộ mã đủ điều kiện dữ liệu/thanh khoản, không lọc theo điểm; (3) **VN-Index** mua và giữ.
+- Dữ liệu 16/07/2024–15/10/2026 (29 kỳ không chồng lấp, 17 trong mẫu / 12 ngoài mẫu, ngoài mẫu từ 24/11/2025). Script tái lập: `scripts/aura_backtest_portfolio.py` (tái dùng đúng logic tín hiệu và chi phí của `core/aura_backtest.py`).
+
+| Giai đoạn | Chiến lược | CAGR | Sharpe (rf=0) | Max Drawdown | Tỷ lệ kỳ thắng |
+|---|---|---|---|---|---|
+| Trong mẫu | Tín hiệu AURA | -9,13% | -0,43 | 11,73% | 35,3% |
+| Trong mẫu | Baseline | +0,80% | 0,14 | 12,57% | 64,7% |
+| Trong mẫu | VN-Index | +22,42% | 1,23 | 9,08% | 64,7% |
+| Ngoài mẫu | Tín hiệu AURA | -17,19% | -1,98 | 18,06% | 16,7% |
+| Ngoài mẫu | Baseline | -19,86% | -1,68 | 21,21% | 41,7% |
+| Ngoài mẫu | VN-Index | +0,43% | 0,13 | 12,52% | 50,0% |
+
+**Kết luận trung thực:** ở cấp độ danh mục, tín hiệu kỹ thuật AURA **không tạo ra giá trị vượt trội** so với VN-Index hay baseline trong giai đoạn kiểm thử — khác với kết quả tích cực ở mức sự kiện riêng lẻ (mục 8.4). Khả năng do: (a) VN-Index là chỉ số vốn hóa, bị chi phối bởi nhóm blue-chip tăng mạnh giai đoạn này, trong khi danh mục equal-weight (đa số mã vốn hóa vừa/nhỏ) chịu bất lợi hệ thống không liên quan đến chất lượng tín hiệu; (b) mẫu chỉ 29 kỳ không chồng lấp — cỡ mẫu nhỏ, phương sai cao, Sharpe âm không có ý nghĩa thống kê mạnh; (c) tín hiệu đơn ngưỡng (điểm ≥ 60) chưa phân biệt mức độ tin cậy theo xếp hạng (không chọn top-N), nên pha loãng tín hiệu mạnh với tín hiệu biên.
+
+**Giới hạn:** giá chưa điều chỉnh cổ tức/chia tách (kế thừa từ 8.4); không có chi phí trượt giá ngoài phí khứ hồi cố định; không mô phỏng quản lý rủi ro trong kỳ (stop-loss); Sharpe ratio giả định lãi suất phi rủi ro = 0%/năm (Sharpe thô, không trừ lãi suất tiền gửi); survivorship bias như 8.4. Kết quả này **không phải khuyến nghị đầu tư**.
 
 ## 9. Giới hạn và đạo đức sử dụng
 
@@ -189,7 +201,7 @@ app.py                      # Trang phân tích chính
 pages/                      # Các trang phụ: sàng lọc, danh mục (tùy bản triển khai)
 core/                       # SSI adapters, BCTC, chỉ báo, bộ lọc, hiển thị
 scripts/                    # Đồng bộ dữ liệu, worker realtime, backtest, kiểm kê
-scripts/windows/            # PowerShell: cài worker theo lịch, runbook nộp bài
+scripts/windows/            # PowerShell: cài worker realtime (install_live_worker.ps1) + lịch EOD tự động (install_eod_refresh.ps1), runbook nộp bài
 scripts/legacy/             # Script một lần thời phát triển (không dùng trong sản phẩm)
 docs/evidence/              # Bằng chứng kiểm chứng: backtest, tóm tắt dữ liệu WebSocket
 requirements.txt            # Phụ thuộc Python
