@@ -363,8 +363,8 @@ def explain_one_score(data: pd.DataFrame):
 st.markdown("""<div class="batday-hero">
  <div class="batday-hero-mini">AURA · MARKET INTELLIGENCE</div>
  <div class="batday-hero-title">Trạm lọc & xếp hạng thị trường</div>
- <div class="batday-hero-subtitle">Khám phá cổ phiếu HOSE · HNX · UPCoM bằng dữ liệu lịch sử SSI.<br>
- Xếp hạng định lượng minh bạch, theo dõi danh mục và phân tích rủi ro tại một nơi.</div>
+ <div class="batday-hero-subtitle">Dành cho nhà đầu tư cá nhân và sinh viên tài chính muốn tự nghiên cứu cổ phiếu HOSE · HNX · UPCoM bằng dữ liệu SSI.<br>
+ Xếp hạng định lượng minh bạch, theo dõi danh mục và phân tích rủi ro tại một nơi — công cụ học thuật, không phải khuyến nghị đầu tư.</div>
  <div class="batday-hero-pills"><span class="batday-hero-pill">DỮ LIỆU SSI EOD</span>
  <span class="batday-hero-pill">ĐIỂM KỸ THUẬT /10</span>
  <span class="batday-hero-pill">WATCHLIST & SO SÁNH</span></div>
