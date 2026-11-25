@@ -15,7 +15,7 @@ Nguồn trong R2 đối với các file tải từ staging được gắn `sourc
 
 ## Cách đọc kết quả khẩu vị
 
-Bảng **Đánh giá sơ bộ** có thể dùng thêm các tỷ số BCTC AURA và vẫn giữ nguyên ngưỡng cũ. Đánh giá theo dữ liệu có đối chiếu nguồn giữ riêng. Không gộp hai kết quả và không dùng điểm sơ bộ làm tín hiệu mua/bán đã kiểm định.
+Bảng **Đánh giá sơ bộ** có thể dùng thêm các tỷ số BCTC AURA và vẫn giữ nguyên ngưỡng hiện hành. Đánh giá theo dữ liệu có đối chiếu nguồn giữ riêng. Không gộp hai kết quả và không dùng điểm sơ bộ làm tín hiệu mua/bán đã kiểm định.
 
 ## Khi trích dẫn trong báo cáo đồ án
 

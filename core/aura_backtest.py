@@ -6,7 +6,7 @@ các phiên SAU ĐÓ tốt hơn (a) VN-Index và (b) toàn bộ mã đủ điề
 Quy tắc (đóng băng, giống core/strategy.py):
 - Điểm kỹ thuật = diem_ta(): giá/MA20/MA50, động lượng 63 phiên, RSI14 Wilder, KL20/KL60 (0–100).
 - Tín hiệu tại đóng cửa phiên t: điểm ≥ 80, đủ ≥ 200 phiên, GTGD TB20 ≥ 2 tỷ, VN-Index ≥ MA50.
-  (Ngưỡng nâng từ 60 lên 80 ngày 24/11/2026, cùng lúc với core/strategy.py, theo quy ước Validea/Piotroski — xem README mục 4.5.)
+  (Ngưỡng theo quy ước Validea/Piotroski — xem README mục 4.5.)
 - Vào lệnh giá MỞ CỬA phiên t+1 (không nhìn trước); thoát giá đóng cửa phiên t+h.
 - Chi phí khứ hồi mặc định 0,40% (phí mua/bán + thuế bán 0,1%), có thể chỉnh.
 - Lấy mẫu mỗi 5 phiên để giảm chồng lấp; chia trong mẫu / ngoài mẫu theo ngày.
