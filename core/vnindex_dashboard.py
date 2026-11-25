@@ -378,8 +378,11 @@ def render_vnindex_strip(root: Path):
     header = ('<div class="aura-market-head"><div><strong>' + title + '</strong>'
               '<div><span>4 chỉ số · Điểm, biến động, khối lượng, giá trị giao dịch</span></div></div>'
               '<span class="aura-market-stamp">' + escape(latest_status) + ' · ' + stamp + '</span></div>')
+    refreshed_at = datetime.now(VN_TZ).strftime('%H:%M:%S')
     foot = ('<div class="aura-market-foot">Nguồn: SSI FastConnect V3 · EOD theo ngày phiên từng chỉ số. '
-            'Giá trị giao dịch và khối lượng hiển thị khi có dữ liệu hợp lệ.</div>')
+            'Giá trị giao dịch và khối lượng hiển thị khi có dữ liệu hợp lệ.</div>'
+            '<div class="aura-market-foot" style="opacity:0.85;margin-top:4px">'
+            'Trang này tải/làm mới dữ liệu lúc ' + refreshed_at + ' giờ VN — tải lại trang (F5) để cập nhật giá mới nhất.</div>')
     st.markdown(CSS + '<div class="aura-market-overview">' + header +
                 '<div class="aura-market-grid">' + inner + '</div>' + foot + '</div>',
                 unsafe_allow_html=True)
