@@ -152,13 +152,20 @@ def _foreign_signal_table(df: pd.DataFrame):
         else:
             st.bar_chart(chart_df, height=320, y_label='Mua ròng (+) / bán ròng (−) · tỷ VND')
     else:
+        # AURA_V111_FOREIGN_TOP_GENZ: màu + header đồng bộ với bảng màu
+        # theme app (core/theme.py: MAU["do"]/MAU["xanh_la"]/MAU["muc"]).
+        MAU_DO = '#E5254B'
+        MAU_XANH_LA = '#078A4F'
+        MAU_CHU = '#1B1233'
+        MAU_LUOI = '#EFE8FF'
+
         def _color(v):
             if pd.isna(v):
                 return ''
             if v > 0:
-                return 'background-color: rgba(16,163,74,0.25); color: #0f5132; font-weight:600'
+                return f'background-color: rgba(7,138,79,0.16); color: {MAU_XANH_LA}; font-weight:700'
             if v < 0:
-                return 'background-color: rgba(220,38,38,0.22); color: #7f1d1d; font-weight:600'
+                return f'background-color: rgba(229,37,75,0.14); color: {MAU_DO}; font-weight:700'
             return ''
 
         def _text(v):
@@ -171,7 +178,17 @@ def _foreign_signal_table(df: pd.DataFrame):
         text_df = map_fn(_text)
         color_df = map_fn(_color)
         try:
-            styled = text_df.style.apply(lambda _: color_df, axis=None)
+            styled = (text_df.style
+                      .apply(lambda _: color_df, axis=None)
+                      .set_table_styles([
+                          {'selector': 'th', 'props': [
+                              ('background-color', MAU_CHU), ('color', '#FFFFFF'),
+                              ('font-weight', '800'), ('text-align', 'center'),
+                              ('border', f'1px solid {MAU_CHU}')]},
+                          {'selector': 'td', 'props': [
+                              ('text-align', 'right'), ('font-weight', '600'),
+                              ('border-bottom', f'1px solid {MAU_LUOI}')]},
+                      ]))
             st.dataframe(styled, use_container_width=True)
         except (ValueError, TypeError, AttributeError):
             st.dataframe(text_df, use_container_width=True)
@@ -181,12 +198,13 @@ def _foreign_signal_table(df: pd.DataFrame):
 
 
 def _top_stock_flow_chart(stocks: pd.DataFrame, *, top_n: int = 10):
-    """Biểu đồ ngang Top mua/bán ròng khối ngoại theo mã (kiểu 24HMoney),
-    nhưng chỉ trong số các mã đã đồng bộ riêng lẻ qua aura_sync_foreign.py —
-    KHÔNG phải Top toàn thị trường, nên luôn ghi rõ phạm vi này.
+    """Top mua/bán ròng khối ngoại theo mã (kiểu 24HMoney) — xem được cả
+    dạng Bảng lẫn Biểu đồ (giống bảng tín hiệu 2 sàn ở trên), chỉ trong số
+    các mã đã đồng bộ riêng lẻ qua aura_sync_foreign.py — KHÔNG phải Top
+    toàn thị trường, nên luôn ghi rõ phạm vi này.
     """
     import streamlit as st
-    st.markdown('#### 📈 Biểu đồ Top mua/bán ròng khối ngoại theo mã')
+    st.markdown('#### 📈 Top mua/bán ròng khối ngoại theo mã')
     if stocks.empty:
         st.caption('Chưa có dữ liệu khối ngoại theo từng mã cổ phiếu riêng lẻ.')
         return
@@ -199,51 +217,119 @@ def _top_stock_flow_chart(stocks: pd.DataFrame, *, top_n: int = 10):
         return
     window_dates = all_dates[-n_sessions:]
     window = stocks[stocks['date'].isin(window_dates)]
-    agg = window.dropna(subset=['net_value_vnd']).groupby('code')['net_value_vnd'].sum()
-    if agg.empty:
+    net_agg = window.dropna(subset=['net_value_vnd']).groupby('code')['net_value_vnd'].sum()
+    if net_agg.empty:
         st.caption('Chưa đủ dữ liệu mua/bán ròng trong khung thời gian này.')
         return
-    agg_ty = (agg / 1e9).round(2)
+    buy_agg = window.groupby('code')['buy_value_vnd'].sum(min_count=1)
+    sell_agg = window.groupby('code')['sell_value_vnd'].sum(min_count=1)
+
+    agg_ty = (net_agg / 1e9).round(2)
     top_buy = agg_ty[agg_ty > 0].sort_values(ascending=False).head(top_n)
     top_sell = agg_ty[agg_ty < 0].sort_values().head(top_n)
-    combo = pd.concat([top_sell.sort_values(), top_buy.sort_values()])
+    combo = pd.concat([top_buy.sort_values(ascending=False), top_sell.sort_values()])
     if combo.empty:
         st.caption('Chưa có mã nào mua/bán ròng rõ rệt trong khung thời gian này.')
         return
 
-    # AURA_V108_FOREIGN_CHART_STYLE: thu nhỏ biểu đồ + dùng đúng bảng màu
-    # của giao diện (core/theme.py: MAU["do"]/MAU["xanh_la"]/MAU["muc"]...)
-    # thay vì màu mặc định không khớp theme.
+    # AURA_V111_FOREIGN_TOP_GENZ: bảng màu + chữ theo đúng theme app
+    # (core/theme.py: MAU["do"]/MAU["xanh_la"]/MAU["muc"]/MAU["tim"]...)
     MAU_DO = '#E5254B'
     MAU_XANH_LA = '#078A4F'
     MAU_CHU = '#1B1233'
     MAU_LUOI = '#EFE8FF'
-    try:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        height = min(4.2, max(2.0, 0.22 * len(combo)))
-        fig, ax = plt.subplots(figsize=(5.2, height), dpi=130)
-        fig.patch.set_facecolor('#FFFFFF')
-        ax.set_facecolor('#FFFFFF')
-        colors = [MAU_DO if v < 0 else MAU_XANH_LA for v in combo.values]
-        ax.barh(combo.index.astype(str), combo.values, color=colors, height=0.62)
-        ax.axvline(0, color=MAU_CHU, linewidth=0.8)
-        ax.set_xlabel('Mua ròng (+) / bán ròng (−) · tỷ VND', color=MAU_CHU, fontsize=8)
-        ax.set_title(f'Top mua/bán ròng khối ngoại · {period_label} gần nhất',
-                     color=MAU_CHU, fontsize=9, fontweight='bold')
-        ax.tick_params(axis='both', colors=MAU_CHU, labelsize=7.5)
-        ax.grid(axis='x', color=MAU_LUOI, linewidth=0.8, zorder=0)
-        ax.set_axisbelow(True)
-        for spine_name, spine in ax.spines.items():
-            spine.set_visible(spine_name == 'bottom')
-            if spine_name == 'bottom':
-                spine.set_color(MAU_CHU)
-        fig.tight_layout()
-        st.pyplot(fig, use_container_width=False)
-        plt.close(fig)
-    except ImportError:
-        st.bar_chart(combo.rename('Ròng (tỷ VND)'), height=max(200, 20 * len(combo)))
+    MAU_TIM = '#6C3BFF'
+    MAU_NEN = '#F4EFFF'
+
+    view = st.radio('Xem dạng', ['Bảng', 'Biểu đồ'], horizontal=True, key='aura_foreign_top_view')
+
+    if view == 'Bảng':
+        rows = []
+        for code, net_ty in combo.items():
+            rows.append({
+                'Mã': code,
+                'Mua (tỷ)': round(buy_agg.get(code, float('nan')) / 1e9, 2),
+                'Bán (tỷ)': round(sell_agg.get(code, float('nan')) / 1e9, 2),
+                'Ròng (tỷ)': net_ty,
+            })
+        table = pd.DataFrame(rows).set_index('Mã')
+
+        def _fmt(v):
+            return '—' if pd.isna(v) else f'{v:+,.2f}'
+
+        def _row_color(row):
+            net = row['Ròng (tỷ)']
+            if pd.isna(net):
+                return [''] * len(row)
+            bg = (f'background-color: rgba(7,138,79,0.16); color: {MAU_XANH_LA}; font-weight:700'
+                  if net > 0 else
+                  f'background-color: rgba(229,37,75,0.14); color: {MAU_DO}; font-weight:700')
+            return [bg] * len(row)
+
+        try:
+            styled = (table.style
+                      .apply(_row_color, axis=1)
+                      .format(_fmt)
+                      .set_table_styles([
+                          {'selector': 'th', 'props': [
+                              ('background-color', MAU_CHU), ('color', '#FFFFFF'),
+                              ('font-weight', '800'), ('text-align', 'center'),
+                              ('border', f'1px solid {MAU_CHU}')]},
+                          {'selector': 'td', 'props': [
+                              ('text-align', 'right'), ('font-weight', '600'),
+                              ('border-bottom', f'1px solid {MAU_LUOI}')]},
+                      ]))
+            st.dataframe(styled, use_container_width=True)
+        except (ValueError, TypeError, AttributeError):
+            st.dataframe(table, use_container_width=True)
+        st.caption(f'Sắp xếp theo mua ròng (+) giảm dần · {period_label} gần nhất.')
+    else:
+        try:
+            import io
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            # AURA_V113_CHART_FIXSIZE: render ra PNG với kích thước pixel
+            # cố định rồi hiện bằng st.image(width=...) — tránh bị Streamlit
+            # tự kéo giãn to theo chiều ngang của khung (st.pyplot ở một số
+            # bản Streamlit bỏ qua use_container_width=False).
+            n = len(combo)
+            height = min(3.6, max(1.8, 0.19 * n))
+            fig, ax = plt.subplots(figsize=(4.6, height), dpi=150)
+            fig.patch.set_facecolor(MAU_NEN)
+            ax.set_facecolor(MAU_NEN)
+            order = combo.sort_values()
+            colors = [MAU_DO if v < 0 else MAU_XANH_LA for v in order.values]
+            bars = ax.barh(order.index.astype(str), order.values, color=colors, height=0.6,
+                            edgecolor=MAU_CHU, linewidth=1.0, zorder=3)
+            span = float(order.values.max() - order.values.min()) or 1.0
+            offset = span * 0.03
+            for rect, v in zip(bars, order.values):
+                ax.text(rect.get_width() + (offset if v >= 0 else -offset), rect.get_y() + rect.get_height() / 2,
+                        f'{v:+.1f}', va='center', ha='left' if v >= 0 else 'right',
+                        fontsize=6, color=MAU_CHU, fontweight='bold')
+            ax.margins(x=0.22)
+            ax.axvline(0, color=MAU_CHU, linewidth=1.0)
+            ax.set_xlabel('Mua ròng (+) / bán ròng (−) · tỷ VND', color=MAU_CHU, fontsize=6.5, fontweight='bold')
+            ax.set_title(f'Top mua/bán ròng khối ngoại · {period_label} gần nhất',
+                         color=MAU_TIM, fontsize=7.5, fontweight='bold')
+            ax.tick_params(axis='both', colors=MAU_CHU, labelsize=6)
+            for lbl in ax.get_yticklabels():
+                lbl.set_fontweight('bold')
+            ax.grid(axis='x', color=MAU_LUOI, linewidth=0.8, zorder=0)
+            ax.set_axisbelow(True)
+            for spine_name, spine in ax.spines.items():
+                spine.set_visible(spine_name == 'bottom')
+                if spine_name == 'bottom':
+                    spine.set_color(MAU_CHU)
+            fig.tight_layout(pad=0.6)
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png', facecolor=MAU_NEN, bbox_inches='tight', pad_inches=0.15)
+            plt.close(fig)
+            buf.seek(0)
+            st.image(buf, width=460)
+        except ImportError:
+            st.bar_chart(combo.rename('Ròng (tỷ VND)'), height=max(200, 20 * len(combo)))
 
 
 def _policy_section(root: Path):
@@ -276,6 +362,16 @@ def _policy_section(root: Path):
 
 def render_macro_panel(root: Path, symbol: str | None = None):
     import streamlit as st
+    # AURA_V112_FOREIGN_TABLE_SHADOW: đổ bóng kiểu "flat shadow" đồng bộ
+    # với nút bấm/card của app (core/theme.py dùng box-shadow Npx Npx 0
+    # #1B1233), áp cho mọi bảng trong tab Khối ngoại.
+    st.markdown(
+        '<style>[data-testid="stDataFrame"]{'
+        'box-shadow:4px 4px 0 #1B1233 !important;'
+        'border:2px solid #1B1233 !important;'
+        'border-radius:14px !important;}</style>',
+        unsafe_allow_html=True,
+    )
     st.markdown('### 🌍 Dòng tiền khối ngoại · SSI EOD')
     st.caption('Dữ liệu **mua, bán, mua ròng/bán ròng** theo ngày; khác với giá SSI WebSocket realtime. '
                'Khối ngoại chỉ là yếu tố bối cảnh, không tự tạo tín hiệu MUA.')
