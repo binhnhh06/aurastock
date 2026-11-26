@@ -125,7 +125,7 @@ def parse_symbols(raw):
 def main(argv=None):
     parser = argparse.ArgumentParser(description='SSI EOD khối ngoại cho AURA (không đặt lệnh)')
     parser.add_argument('--days', type=int, default=10, help='Số ngày làm việc gần đây (không xét lễ)')
-    parser.add_argument('--indices', default='VNINDEX,VN30,HNXINDEX')
+    parser.add_argument('--indices', default='VNINDEX,VN30,HNXINDEX,UPCOMINDEX')
     parser.add_argument('--symbols', default='', help='Ví dụ: FPT,HPG,SSI')
     parser.add_argument('--vn30', action='store_true', help='Tải riêng rổ VN30 (mẫu, không đại diện toàn thị trường)')
     parser.add_argument('--dry-run', action='store_true')
