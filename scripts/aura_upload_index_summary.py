@@ -7,6 +7,17 @@ import json
 import sys
 from pathlib import Path
 
+# AURA_V117_UTF8_STDOUT: khi chạy qua Task Scheduler/console cp1252 của Windows,
+# print() dòng tiếng Việt có dấu (vd 'THIẾU CẤU HÌNH') làm crash UnicodeEncodeError
+# ngay từ dòng đầu -> job EOD dừng giữa chừng, 4 thẻ chỉ số không được đẩy lên R2.
+# Ép stdout/stderr sang UTF-8 (hoặc thay ký tự lỗi) để không bao giờ crash vì
+# encoding nữa, bất kể console đang ở codepage nào.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))

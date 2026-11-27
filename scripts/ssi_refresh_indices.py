@@ -18,6 +18,17 @@ import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+# AURA_V117_UTF8_STDOUT: khi chạy qua Task Scheduler/console cp1252 của Windows,
+# print() các dòng tiếng Việt có dấu (vd 'CHUA_CO_DU_LIEU · Loại lỗi') làm crash
+# UnicodeEncodeError ngay giữa vòng lặp 4 chỉ số -> job EOD dừng giữa chừng, các
+# chỉ số sau không được cập nhật. Ép stdout/stderr sang UTF-8 (hoặc thay ký tự
+# lỗi) để không bao giờ crash vì encoding nữa, bất kể console đang ở codepage nào.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
