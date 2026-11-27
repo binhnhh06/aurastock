@@ -137,7 +137,10 @@ def _rss_search(query: str, limit=12) -> list[dict]:
     url = "https://news.google.com/rss/search?q=" + quote(query[:330], safe="") + "&hl=vi&gl=VN&ceid=VN:vi"
     try:
         req = Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; AURA-StockResearch/1.0)"})
-        with urlopen(req, timeout=4) as response:
+        # AURA_V115_RSS_TIMEOUT: 4s là quá ngắn cho mã được đưa tin nhiều (vd FPT) -
+        # payload RSS lớn hơn hẳn các mã khác nên hay bị timeout và rơi vào nhánh
+        # "không tìm được tin" dù nguồn vẫn có dữ liệu. Nới lên 9s, vẫn có giới hạn.
+        with urlopen(req, timeout=9) as response:
             if getattr(response, "status", 200) != 200:
                 return []
             payload = response.read(650_001)
