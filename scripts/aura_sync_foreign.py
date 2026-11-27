@@ -19,6 +19,17 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 import pandas as pd
 
+# AURA_V114_UTF8_STDOUT: khi chạy qua Task Scheduler/console cp1252 của Windows,
+# print() các dòng tiếng Việt có dấu (vd 'mục tiêu') làm crash UnicodeEncodeError
+# ngay từ dòng đầu của main() -> job EOD dừng giữa chừng, khối ngoại không được
+# cập nhật. Ép stdout/stderr sang UTF-8 (hoặc thay ký tự lỗi) để không bao giờ
+# crash vì encoding nữa, bất kể console đang ở codepage nào.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from core.aura_macro_foreign import FLOW_REL, FLOW_COLUMNS, read_foreign

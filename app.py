@@ -149,15 +149,22 @@ def _gia_ssi_cho_the(ma_cp, gia_eod_vnd, ngay_eod=None):
             return result
         if status not in ("LIVE_TICK", "LAST_TICK") or receipt is None:
             return result
-        # A tick older than a more recent EOD candle must not replace it.
+        is_live = status == "LIVE_TICK"
+        # AURA_V116_LAST_TICK_VS_EOD: một tick "khớp cuối" (không phải realtime) chỉ
+        # đáng tin hơn EOD khi nó MỚI HƠN ngày EOD đang có (tức EOD chưa kịp đồng bộ
+        # cho phiên đó). Nếu EOD đã có đúng ngày của tick rồi thì EOD (đã chốt phiên,
+        # gồm cả ATC) đáng tin hơn một lệnh khớp giữa phiên - không được để tick cũ
+        # (vd 13:42 giữa phiên chiều) đè lên giá đóng cửa thật đã xác nhận.
         if ngay_eod:
             eod_date = pd.to_datetime(ngay_eod, errors="coerce", dayfirst=False)
             received_local = pd.Timestamp(receipt)
             if received_local.tzinfo is not None:
                 received_local = received_local.tz_convert("Asia/Ho_Chi_Minh")
-            if not pd.isna(eod_date) and received_local.date() < eod_date.date():
-                return result
-        is_live = status == "LIVE_TICK"
+            if not pd.isna(eod_date):
+                if received_local.date() < eod_date.date():
+                    return result
+                if not is_live and received_local.date() <= eod_date.date():
+                    return result
         result.update({
             "price": price,
             "label": "GIÁ REALTIME SSI" if is_live else "GIÁ KHỚP CUỐI SSI",
